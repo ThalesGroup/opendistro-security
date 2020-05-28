@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.support.WildcardMatcher;
 import org.apache.logging.log4j.LogManager;
@@ -59,13 +60,13 @@ public class OpenDistroSecurityIndexSearcherWrapper extends IndexSearcherWrapper
     protected final Index index;
     protected final String opendistrosecurityIndex;
     private final AdminDNs adminDns;
-    private final PrivilegesEvaluator evaluator;
+    private final Evaluator evaluator;
     private final Collection<String> indexPatterns;
     private final Collection<String> allowedRoles;
     private final Boolean protectedIndexEnabled;
 
     //constructor is called per index, so avoid costly operations here
-    public OpenDistroSecurityIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs, final PrivilegesEvaluator evaluator) {
+    public OpenDistroSecurityIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs, final Evaluator evaluator) {
         index = indexService.index();
         threadContext = indexService.getThreadPool().getThreadContext();
         this.opendistrosecurityIndex = settings.get(ConfigConstants.OPENDISTRO_SECURITY_CONFIG_INDEX_NAME, ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CONFIG_INDEX);

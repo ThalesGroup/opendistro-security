@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -105,8 +106,8 @@ public class ReflectionHelper {
 
     @SuppressWarnings("unchecked")
     public static Collection<RestHandler> instantiateMngtRestApiHandler(final Settings settings, final Path configPath, final RestController restController,
-            final Client localClient, final AdminDNs adminDns, final IndexBaseConfigurationRepository cr, final ClusterService cs, final PrincipalExtractor principalExtractor,
-            final PrivilegesEvaluator evaluator, final ThreadPool threadPool, final AuditLog auditlog) {
+                                                                        final Client localClient, final AdminDNs adminDns, final IndexBaseConfigurationRepository cr, final ClusterService cs, final PrincipalExtractor principalExtractor,
+                                                                        final Evaluator evaluator, final ThreadPool threadPool, final AuditLog auditlog) {
 
         if (advancedModulesDisabled()) {
             return Collections.emptyList();

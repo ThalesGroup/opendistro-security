@@ -86,7 +86,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final Logger actionTrace = LogManager.getLogger("opendistro_security_action_trace");
-    private final PrivilegesEvaluator evalp;
+    private final Evaluator evalp;
     private final AdminDNs adminDns;
     private DlsFlsRequestValve dlsFlsValve;
     private final AuditLog auditLog;
@@ -95,7 +95,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
     private final ComplianceConfig complianceConfig;
     private final CompatConfig compatConfig;
 
-    public OpenDistroSecurityFilter(final PrivilegesEvaluator evalp, final AdminDNs adminDns,
+    public OpenDistroSecurityFilter(final Evaluator evalp, final AdminDNs adminDns,
             DlsFlsRequestValve dlsFlsValve, AuditLog auditLog, ThreadPool threadPool, ClusterService cs,
             ComplianceConfig complianceConfig, final CompatConfig compatConfig) {
         this.evalp = evalp;
@@ -257,7 +257,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
 
             final EvaluatorResponse pres = eval.evaluate(user, action, request, task);
 
-            log.info("Permission: " + pres);
+            log.info("Permission: " + pres); // remove
             
             if (log.isDebugEnabled()) {
                 log.debug(pres);

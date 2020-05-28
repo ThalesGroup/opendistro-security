@@ -56,6 +56,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLReloadCertsAction;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLCertsInfoAction;
 import org.apache.lucene.search.QueryCachingPolicy;
@@ -183,7 +184,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
     private boolean sslCertReloadEnabled;
     private volatile OpenDistroSecurityRestFilter securityRestHandler;
     private volatile OpenDistroSecurityInterceptor odsi;
-    private volatile PrivilegesEvaluator evaluator;
+    private volatile Evaluator evaluator;
     private volatile ThreadPool threadPool;
     private volatile IndexBaseConfigurationRepository cr;
     private volatile AdminDNs adminDns;

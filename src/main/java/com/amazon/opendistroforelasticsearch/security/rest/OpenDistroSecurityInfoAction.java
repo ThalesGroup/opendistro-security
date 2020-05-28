@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.RamUsageEstimator;
@@ -64,10 +65,10 @@ import com.amazon.opendistroforelasticsearch.security.user.User;
 public class OpenDistroSecurityInfoAction extends BaseRestHandler {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final PrivilegesEvaluator evaluator;
+    private final Evaluator evaluator;
     private final ThreadContext threadContext;
 
-    public OpenDistroSecurityInfoAction(final Settings settings, final RestController controller, final PrivilegesEvaluator evaluator, final ThreadPool threadPool) {
+    public OpenDistroSecurityInfoAction(final Settings settings, final RestController controller, final Evaluator evaluator, final ThreadPool threadPool) {
         super(settings);
         this.threadContext = threadPool.getThreadContext();
         this.evaluator = evaluator;

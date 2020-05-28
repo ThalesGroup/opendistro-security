@@ -35,6 +35,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 import java.io.IOException;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -57,10 +58,10 @@ import com.amazon.opendistroforelasticsearch.security.user.User;
 public class KibanaInfoAction extends BaseRestHandler {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final PrivilegesEvaluator evaluator;
+    private final Evaluator evaluator;
     private final ThreadContext threadContext;
 
-    public KibanaInfoAction(final Settings settings, final RestController controller, final PrivilegesEvaluator evaluator, final ThreadPool threadPool) {
+    public KibanaInfoAction(final Settings settings, final RestController controller, final Evaluator evaluator, final ThreadPool threadPool) {
         super(settings);
         this.threadContext = threadPool.getThreadContext();
         this.evaluator = evaluator;
