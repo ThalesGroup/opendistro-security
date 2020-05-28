@@ -33,6 +33,8 @@ package com.amazon.opendistroforelasticsearch.security.filter;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.EvaluatorResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
@@ -238,7 +240,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 return;
             }
 
-            final PrivilegesEvaluator eval = evalp;
+            final Evaluator eval = evalp;
 
             if (!eval.isInitialized()) {
                 log.error("Open Distro Security not initialized for {}", action);
@@ -251,7 +253,11 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 log.trace("Evaluate permissions for user: {}", user.getName());
             }
 
-            final PrivilegesEvaluatorResponse pres = eval.evaluate(user, action, request, task);
+            log.info("Evaluate permissions for user: {}", user.getName());
+
+            final EvaluatorResponse pres = eval.evaluate(user, action, request, task);
+
+            log.info("Permission: " + pres);
             
             if (log.isDebugEnabled()) {
                 log.debug(pres);

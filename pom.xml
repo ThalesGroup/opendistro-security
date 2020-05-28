@@ -72,7 +72,7 @@
         <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/
         </sonatypeOssDistMgmtSnapshotsUrl>
         <dependency.locations.enabled>false</dependency.locations.enabled>
-        <elasticsearch.version>6.8.6</elasticsearch.version>
+        <elasticsearch.version>6.8.3</elasticsearch.version>
 
         <!-- deps -->
         <netty-native.version>2.0.20.Final</netty-native.version>
@@ -415,20 +415,6 @@
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.elasticsearch.plugin</groupId>
-            <artifactId>percolator-client</artifactId>
-            <version>${elasticsearch.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
 

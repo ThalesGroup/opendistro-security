@@ -199,6 +199,9 @@ public class BackendRegistry implements ConfigurationChangeListener {
         this.auditLog = auditLog;
         this.threadPool = threadPool;
         this.userInjector = new UserInjector(settings, threadPool, auditLog, xffResolver);
+
+        log.debug("esSettings: " + esSettings);
+        log.debug("configPath: " + configPath);
         
         authImplMap.put("intern_c", InternalAuthenticationBackend.class.getName());
         authImplMap.put("intern_z", NoOpAuthorizationBackend.class.getName());
@@ -472,6 +475,8 @@ public class BackendRegistry implements ConfigurationChangeListener {
             }
         }
 
+
+
         //loop over all transport auth domains
         for (final AuthDomain authDomain: transportAuthDomains) {
 
@@ -542,6 +547,10 @@ public class BackendRegistry implements ConfigurationChangeListener {
      * @throws ElasticsearchSecurityException
      */
     public boolean authenticate(final RestRequest request, final RestChannel channel, final ThreadContext threadContext) {
+
+        log.debug("request parameter in authenticate : " + request);
+        log.debug("channel parameter in authenticate : " + channel);
+        log.debug("threadContext parameter in authenticate : " + threadContext);
 
         if (request.getRemoteAddress() instanceof InetSocketAddress && isBlocked(((InetSocketAddress) request.getRemoteAddress()).getAddress())) {
             if (log.isDebugEnabled()) {

@@ -104,7 +104,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.MultimapBuilder.SetMultimapBuilder;
 import com.google.common.collect.SetMultimap;
 
-public class PrivilegesEvaluator implements ConfigurationChangeListener {
+public class PrivilegesEvaluator implements Evaluator {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final Logger actionTrace = LogManager.getLogger("opendistro_security_action_trace");
@@ -402,11 +402,13 @@ public class PrivilegesEvaluator implements ConfigurationChangeListener {
         return configModel.getSecurityRoles().filter(roles);
     }
 
+    @Override
     public boolean isInitialized() {
         return roleMappingHolder != null && configModel.getSecurityRoles() != null && getRolesSettings() != null && getConfigSettings() != null;
     }
 
-    public PrivilegesEvaluatorResponse evaluate(final User user, String action0, final ActionRequest request, Task task) {
+    @Override
+    public EvaluatorResponse evaluate(final User user, String action0, final ActionRequest request, Task task) {
 
         if (!isInitialized()) {
             throw new ElasticsearchSecurityException("Open Distro Security is not initialized.");
