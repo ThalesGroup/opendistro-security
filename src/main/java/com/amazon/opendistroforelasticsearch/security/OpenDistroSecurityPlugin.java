@@ -798,10 +798,13 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
         log.info("OpenDistroSecurityPlugin settings : " + settings);
-        log.info("OpenDistroSecurityPlugin configPath : " + configPath);
         // more like es settings
 
-        evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+        log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
+
+        evaluator = Evaluator.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+
+        // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
         final CompatConfig compatConfig = new CompatConfig(environment);
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
