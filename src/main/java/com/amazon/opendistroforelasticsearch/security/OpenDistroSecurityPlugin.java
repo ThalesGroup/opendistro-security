@@ -57,6 +57,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.GetEvaluatorFactory;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLReloadCertsAction;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLCertsInfoAction;
 import org.apache.lucene.search.QueryCachingPolicy;
@@ -796,6 +797,10 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         backendRegistry = new BackendRegistry(settings, configPath, adminDns, xffResolver, iab, auditLog, threadPool);
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
+        log.info("OpenDistroSecurityPlugin settings : " + settings);
+        log.info("OpenDistroSecurityPlugin configPath : " + configPath);
+        // more like es settings
+
         evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
         final CompatConfig compatConfig = new CompatConfig(environment);
@@ -1012,6 +1017,10 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_ALLOW_NOW_IN_DLS, false, Property.NodeScope, Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_RESTAPI_ALLOW_SECURITYCONFIG_MODIFICATION, false, Property.NodeScope, Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED, false, Property.NodeScope, Property.Filtered));
+
+            // Priviledge Evaluator Settings
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR, "abc", Property.NodeScope, Property.Filtered));
+
         }
         
         return settings;

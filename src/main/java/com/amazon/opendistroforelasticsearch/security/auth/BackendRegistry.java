@@ -260,6 +260,8 @@ public class BackendRegistry implements ConfigurationChangeListener {
         final Multimap<String, ClientBlockRegistry<String>> authBackendClientBlockRegistries0 = ArrayListMultimap.create();
         final Map<String, Settings> authzDyn = settings.getGroups("opendistro_security.dynamic.authz");
 
+        log.info("settings : " + settings);
+
         for (final String ad : authzDyn.keySet()) {
             final Settings ads = authzDyn.get(ad);
             final boolean enabled = ads.getAsBoolean("enabled", true);

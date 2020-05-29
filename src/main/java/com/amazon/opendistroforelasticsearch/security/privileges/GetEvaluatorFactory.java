@@ -1,5 +1,6 @@
 package com.amazon.opendistroforelasticsearch.security.privileges;
 
+
 /**
  * @author Divyansh Jain
  */
