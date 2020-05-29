@@ -60,6 +60,7 @@ import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.GetEvaluatorFactory;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLReloadCertsAction;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLCertsInfoAction;
+import com.jayway.jsonpath.internal.filter.EvaluatorFactory;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -802,7 +803,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
 
-        evaluator = Evaluator.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+        evaluator = GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
 
         // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
