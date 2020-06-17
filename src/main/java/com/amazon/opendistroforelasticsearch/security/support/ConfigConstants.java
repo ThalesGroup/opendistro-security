@@ -40,6 +40,7 @@ import java.util.Set;
 
 public class ConfigConstants {
 
+    public static final String OPENDISTRO_SECURITY_RANGER_AUTH_APP_ID = "opendistro_security.ranger.app_id";
     public static final String OPENDISTRO_SECURITY_EVALUATOR = "opendistro_security.evaluator";
 
     public static final String OPENDISTRO_SECURITY_CONFIG_PREFIX = "_opendistro_security_";
@@ -232,6 +233,9 @@ public class ConfigConstants {
     public static final String OPENDISTRO_SECURITY_SSL_ONLY = "opendistro_security.ssl_only";
     public static final String OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED = "opendistro_security.ssl_cert_reload_enabled";
     public static final String OPENDISTRO_SECURITY_DISABLE_ENVVAR_REPLACEMENT = "opendistro_security.disable_envvar_replacement";
+    public static final String OPENDISTRO_KERBEROS_ACCEPTOR_PRINCIPAL = "opendistro_security.kerberos.acceptor_principal";
+    public static final String OPENDISTRO_KERBEROS_ACCEPTOR_KEYTAB_FILEPATH = "opendistro_security.kerberos.acceptor_keytab_filepath";
+    public static final String OPENDISTRO_KERBEROS_KRB5_FILEPATH = "opendistro_security.kerberos.krb5_filepath";
 
     public enum RolesMappingResolution {
         MAPPING_ONLY,

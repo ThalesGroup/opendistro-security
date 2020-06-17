@@ -33,6 +33,7 @@ import java.util.Set;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
+import com.kerb4j.client.SpnegoClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -64,12 +65,15 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
 
     private static final String EMPTY_STRING = "";
     private static final Oid[] KRB_OIDS = new Oid[] {KrbConstants.SPNEGO, KrbConstants.KRB5MECH};
+    public final static String SERVER_KEYTAB_PATH = "/etc/security/keytabs/es.service.keytab";
+    public final static String KRB5_CONF = "/etc/krb5.conf";
 
     protected final Logger log = LogManager.getLogger(this.getClass());
 
     private boolean stripRealmFromPrincipalName;
     private Set<String> acceptorPrincipal;
     private Path acceptorKeyTabPath;
+    private static SpnegoClient spnegoClient = null;
 
     public HTTPSpnegoAuthenticator(final Settings settings, final Path configPath) {
         super();
@@ -446,6 +450,31 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             buffer.append("]");
             return buffer.toString();
         }
+    }
+
+    public static void initSpnegoClient(String svcName, String keytabPath, String krbConf) {
+        if (spnegoClient != null) {
+            return;
+        }
+
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
+
+
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                System.setProperty("java.security.krb5.conf", krbConf);
+                return null;
+            }
+        });
+
+        spnegoClient = SpnegoClient.loginWithKeyTab(svcName, keytabPath);
+    }
+
+    public static SpnegoClient getSpnegoClient() {
+        return spnegoClient;
     }
 
 }

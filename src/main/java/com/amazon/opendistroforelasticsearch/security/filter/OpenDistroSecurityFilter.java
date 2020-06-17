@@ -30,11 +30,20 @@
 
 package com.amazon.opendistroforelasticsearch.security.filter;
 
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
+import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
+import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
+import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
+import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
 import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.EvaluatorResponse;
+import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
+import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
+import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
+import com.amazon.opendistroforelasticsearch.security.support.SourceFieldsContext;
+import com.amazon.opendistroforelasticsearch.security.user.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
@@ -67,20 +76,8 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
-import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
-import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
-import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluatorResponse;
-import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
-import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
-import com.amazon.opendistroforelasticsearch.security.support.SourceFieldsContext;
-import com.amazon.opendistroforelasticsearch.security.user.User;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class OpenDistroSecurityFilter implements ActionFilter {
 
