@@ -8,6 +8,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.Configuratio
 import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
 import com.amazon.opendistroforelasticsearch.security.securityconf.ConfigModel;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
+import com.amazon.opendistroforelasticsearch.security.support.UserGroupMappingCache;
 import com.amazon.opendistroforelasticsearch.security.user.User;
 import com.google.common.base.Strings;
 import com.kerb4j.client.SpnegoClient;
@@ -15,6 +16,8 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.ranger.audit.provider.MiscUtil;
+import org.apache.ranger.authorization.hadoop.config.RangerConfiguration;
+import org.apache.ranger.plugin.audit.RangerDefaultAuditHandler;
 import org.apache.ranger.plugin.service.RangerBasePlugin;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
@@ -28,6 +31,10 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import javax.security.auth.Subject;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -79,7 +86,7 @@ public class RangerPrivilegesEvaluator implements Evaluator {
 
     private static volatile RangerBasePlugin rangerPlugin = null;
     private String rangerUrl = null;
-    // private UserGroupMappingCache usrGrpCache = null; // implement later
+    private UserGroupMappingCache usrGrpCache = null;
     private boolean initUGI = false;
 
     public RangerPrivilegesEvaluator(final ClusterService clusterService, final ThreadPool threadPool,
@@ -133,9 +140,63 @@ public class RangerPrivilegesEvaluator implements Evaluator {
             log.error("UGI not getting initialized.");
         }
 
+        configureRangerPlugin(settings);
+        usrGrpCache = new UserGroupMappingCache();
+        usrGrpCache.init();
 
+    }
 
+    public void configureRangerPlugin(Settings settings) {
+        String svcType = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "elasticsearch");
+        String appId = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
 
+        RangerBasePlugin me = rangerPlugin;
+        if (me == null) {
+            synchronized(PrivilegesEvaluator.class) {
+                me = rangerPlugin;
+                if (me == null) {
+                    me = rangerPlugin = new RangerBasePlugin(svcType, appId);
+                }
+            }
+        }
+        log.debug("Calling ranger plugin init");
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
+
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                ClassLoader cl = org.apache.ranger.authorization.hadoop.config.RangerConfiguration.class.getClassLoader();
+                URL[] urls = ((URLClassLoader)cl).getURLs();
+                String pluginPath = null;
+                for(URL url: urls){
+                    String urlFile = url.getFile();
+                    int idx = urlFile.indexOf("ranger-plugins-common");
+                    if (idx != -1) {
+                        pluginPath = urlFile.substring(0, idx);
+                    }
+                }
+
+                try {
+                    Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
+                    method.setAccessible(true);
+                    String rangerResourcesPath = pluginPath + "resources/";
+                    method.invoke(cl, new Object[]{new File(rangerResourcesPath).toURI().toURL()});
+                } catch (Exception e) {
+                    log.error("Error in adding ranger config files to classpath : " + e.getMessage());
+                    if (log.isDebugEnabled()) {
+                        e.printStackTrace();
+                    }
+                }
+                rangerPlugin.init();
+                return null;
+            }
+        });
+        this.rangerUrl = RangerConfiguration.getInstance().get("ranger.plugin.elasticsearch.policy.rest.url");
+        log.debug("Ranger uri : " + rangerUrl);
+        RangerDefaultAuditHandler auditHandler = new RangerDefaultAuditHandler();
+        rangerPlugin.setResultProcessor(auditHandler);
     }
 
     public boolean initializeUGI(Settings settings) {

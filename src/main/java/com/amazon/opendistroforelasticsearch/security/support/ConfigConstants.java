@@ -236,6 +236,8 @@ public class ConfigConstants {
     public static final String OPENDISTRO_KERBEROS_ACCEPTOR_PRINCIPAL = "opendistro_security.kerberos.acceptor_principal";
     public static final String OPENDISTRO_KERBEROS_ACCEPTOR_KEYTAB_FILEPATH = "opendistro_security.kerberos.acceptor_keytab_filepath";
     public static final String OPENDISTRO_KERBEROS_KRB5_FILEPATH = "opendistro_security.kerberos.krb5_filepath";
+    public static final String OPENDISTRO_AUTH_RANGER_SERVICE_TYPE = "";
+    public static final String OPENDISTRO_AUTH_RANGER_APP_ID = "";
 
     public enum RolesMappingResolution {
         MAPPING_ONLY,

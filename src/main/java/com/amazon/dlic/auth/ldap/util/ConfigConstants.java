@@ -26,6 +26,10 @@ public final class ConfigConstants {
     public static final String LDAP_AUTHCZ_BASE = "base";
     public static final String LDAP_AUTHCZ_SEARCH = "search";
 
+    public static final String LDAP_USER_GROUP_ATTR = "usergroup_attribute";
+    public static final String LDAP_GROUP_BASE = "groupbase";
+    public static final String LDAP_GROUP_SEARCH = "groupsearch";
+    public static final String LDAP_GROUP_NAME_ATTR = "groupname_attribute";
 
     public static final String LDAP_AUTHZ_RESOLVE_NESTED_ROLES = "resolve_nested_roles";
     public static final String LDAP_AUTHZ_ROLEBASE = "rolebase";
