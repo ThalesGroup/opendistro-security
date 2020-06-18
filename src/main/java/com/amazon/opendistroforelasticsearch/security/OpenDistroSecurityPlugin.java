@@ -32,6 +32,7 @@ package com.amazon.opendistroforelasticsearch.security;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -153,7 +154,6 @@ import com.amazon.opendistroforelasticsearch.security.filter.OpenDistroSecurityR
 import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityHttpServerTransport;
 import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityNonSslHttpServerTransport;
 import com.amazon.opendistroforelasticsearch.security.http.XFFResolver;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesInterceptor;
 import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
 import com.amazon.opendistroforelasticsearch.security.rest.KibanaInfoAction;
@@ -804,7 +804,11 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
 
-        evaluator = GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+        try {
+            evaluator = (Evaluator) GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+        } catch (ClassNotFoundException | InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
 
         // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
