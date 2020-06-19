@@ -28,19 +28,16 @@ import org.apache.ranger.plugin.service.RangerBasePlugin;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.action.*;
-import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.bulk.BulkAction;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkShardRequest;
 import org.elasticsearch.action.fieldcaps.FieldCapabilitiesRequest;
 import org.elasticsearch.action.get.MultiGetAction;
 import org.elasticsearch.action.get.MultiGetRequest;
 import org.elasticsearch.action.search.MultiSearchAction;
 import org.elasticsearch.action.search.MultiSearchRequest;
 import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchScrollAction;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.termvectors.MultiTermVectorsAction;
 import org.elasticsearch.action.termvectors.MultiTermVectorsRequest;
@@ -50,14 +47,13 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.reindex.ReindexAction;
 import org.elasticsearch.index.reindex.ReindexRequest;
-import org.elasticsearch.search.aggregations.AggregationBuilder;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.RemoteClusterAware;
@@ -68,7 +64,6 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -77,7 +72,7 @@ import java.util.*;
  * @author Divyansh Jain
  */
 
-public class RangerPrivilegesEvaluator implements Evaluator {
+public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     private static final Set<String> NULL_SET = Sets.newHashSet((String)null);
@@ -95,75 +90,44 @@ public class RangerPrivilegesEvaluator implements Evaluator {
     private final AuditLog auditLog;
     private ThreadContext threadContext;
     //private final static IndicesOptions DEFAULT_INDICES_OPTIONS = IndicesOptions.lenientExpandOpen();
-    private final ConfigurationRepository configurationRepository;
+    // private final ConfigurationRepository configurationRepository;
 
-    private PrivilegesInterceptor privilegesInterceptor;
-
-    private final boolean checkSnapshotRestoreWritePrivileges;
-
-    private ConfigConstants.RolesMappingResolution rolesMappingResolution;
-
-    private final ClusterInfoHolder clusterInfoHolder;
     //private final boolean typeSecurityDisabled = false;
     private final ConfigModel configModel;
     private final IndexResolverReplacer irr;
-    private final SnapshotRestoreEvaluator snapshotRestoreEvaluator;
-    private final OpenDistroSecurityIndexAccessEvaluator securityIndexAccessEvaluator;
-    private final OpenDistroProtectedIndexAccessEvaluator protectedIndexAccessEvaluator;
-    private final TermsAggregationEvaluator termsAggregationEvaluator;
     private final Map<Class<?>, Method> typeCache = Collections.synchronizedMap(new HashMap<Class<?>, Method>(100));
     private final Map<Class<?>, Method> typesCache = Collections.synchronizedMap(new HashMap<Class<?>, Method>(100));
-
-    private final DlsFlsEvaluator dlsFlsEvaluator;
     // private PrivilegesEvaluator.TenantHolder tenantHolder = null;
-
-    private final boolean advancedModulesEnabled;
 
     private static volatile RangerBasePlugin rangerPlugin = null;
     private String rangerUrl = null;
     private UserGroupMappingCache usrGrpCache = null;
     private boolean initUGI = false;
 
+    @Inject
     public RangerPrivilegesEvaluator(final ClusterService clusterService, final ThreadPool threadPool,
                                      final ConfigurationRepository configurationRepository, final ActionGroupHolder ah, final IndexNameExpressionResolver resolver,
                                      AuditLog auditLog, final Settings settings, final PrivilegesInterceptor privilegesInterceptor, final ClusterInfoHolder clusterInfoHolder,
                                      final IndexResolverReplacer irr, boolean advancedModulesEnabled) {
 
-        super();
-        this.configurationRepository = configurationRepository;
+        super(configurationRepository, privilegesInterceptor);
+        log.info("### Loaded Privilege Evaluator : RangerPrivilegesEvaluator");
+        // this.configurationRepository = configurationRepository;
         this.clusterService = clusterService;
         this.resolver = resolver;
         this.auditLog = auditLog;
 
         this.threadContext = threadPool.getThreadContext();
-        this.privilegesInterceptor = privilegesInterceptor;
+        // this.privilegesInterceptor = privilegesInterceptor;
 
-        try {
-            rolesMappingResolution = ConfigConstants.RolesMappingResolution.valueOf(settings.get(ConfigConstants.OPENDISTRO_SECURITY_ROLES_MAPPING_RESOLUTION, ConfigConstants.RolesMappingResolution.MAPPING_ONLY.toString()).toUpperCase());
-        } catch (Exception e) {
-            log.error("Cannot apply roles mapping resolution",e);
-            rolesMappingResolution =  ConfigConstants.RolesMappingResolution.MAPPING_ONLY;
-        }
-
-        this.checkSnapshotRestoreWritePrivileges = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_CHECK_SNAPSHOT_RESTORE_WRITE_PRIVILEGES,
-                ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CHECK_SNAPSHOT_RESTORE_WRITE_PRIVILEGES);
-
-        this.clusterInfoHolder = clusterInfoHolder;
         //this.typeSecurityDisabled = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_DISABLE_TYPE_SECURITY, false);
         configModel = new ConfigModel(ah);
         configurationRepository.subscribeOnChange("roles", configModel);
         configurationRepository.subscribeOnChange("rolesmapping", this);
         this.irr = irr;
-        snapshotRestoreEvaluator = new SnapshotRestoreEvaluator(settings, auditLog);
-        securityIndexAccessEvaluator = new OpenDistroSecurityIndexAccessEvaluator(settings, auditLog);
-        protectedIndexAccessEvaluator = new OpenDistroProtectedIndexAccessEvaluator(settings, auditLog);
-        dlsFlsEvaluator = new DlsFlsEvaluator(settings, threadPool);
-        termsAggregationEvaluator = new TermsAggregationEvaluator();
 
         //tenantHolder = new PrivilegesEvaluator.TenantHolder();
         //configurationRepository.subscribeOnChange("roles", tenantHolder);
-
-        this.advancedModulesEnabled = advancedModulesEnabled;
 
         String ES_PLUGIN_APP_ID = settings.get(ConfigConstants.OPENDISTRO_SECURITY_RANGER_AUTH_APP_ID);
 
@@ -963,13 +927,13 @@ public class RangerPrivilegesEvaluator implements Evaluator {
 
     }
 
-    private Settings getRolesSettings() { // generic
-        return configurationRepository.getConfiguration(ConfigConstants.CONFIGNAME_ROLES);
-    }
-
-    private Settings getConfigSettings() { // generic
-        return configurationRepository.getConfiguration(ConfigConstants.CONFIGNAME_CONFIG);
-    }
+//    private Settings getRolesSettings() { // generic
+//        return configurationRepository.getConfiguration(ConfigConstants.CONFIGNAME_ROLES);
+//    }
+//
+//    private Settings getConfigSettings() { // generic
+//        return configurationRepository.getConfiguration(ConfigConstants.CONFIGNAME_CONFIG);
+//    }
 
     @Override
     public boolean isInitialized() {
@@ -977,42 +941,7 @@ public class RangerPrivilegesEvaluator implements Evaluator {
     }
 
     @Override
-    public Set<String> mapRoles(User user, TransportAddress remoteAddress) {
-        return null;
-    }
-
-    @Override
-    public Map<String, Boolean> mapTenants(User user, Set<String> securityRoles) {
-        return null;
-    }
-
-    @Override
-    public boolean notFailOnForbiddenEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean multitenancyEnabled() {
-        return false;
-    }
-
-    @Override
-    public String kibanaIndex() {
-        return null;
-    }
-
-    @Override
-    public String kibanaServerUsername() {
-        return null;
-    }
-
-    @Override
-    public Set<String> getAllConfiguredTenantNames() {
-        return null;
-    }
-
-    @Override
     public void onChange(Settings configuration) {
-
+        return;
     }
 }

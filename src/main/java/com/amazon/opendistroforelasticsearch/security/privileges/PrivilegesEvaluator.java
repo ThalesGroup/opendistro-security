@@ -79,6 +79,7 @@ import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.ImmutableOpenMap;
 import org.elasticsearch.common.collect.Tuple;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -138,12 +139,14 @@ public class PrivilegesEvaluator implements Evaluator {
     private TenantHolder tenantHolder = null;
     private final boolean advancedModulesEnabled;
 
+    @Inject
     public PrivilegesEvaluator(final ClusterService clusterService, final ThreadPool threadPool,
                                final ConfigurationRepository configurationRepository, final ActionGroupHolder ah, final IndexNameExpressionResolver resolver,
                                AuditLog auditLog, final Settings settings, final PrivilegesInterceptor privilegesInterceptor, final ClusterInfoHolder clusterInfoHolder,
                                final IndexResolverReplacer irr, boolean advancedModulesEnabled) {
 
         super();
+        log.info("### Loaded Privilege Evaluator : Default OpenDistro PrivilegesEvaluator");
         this.configurationRepository = configurationRepository;
         this.clusterService = clusterService;
         this.resolver = resolver;

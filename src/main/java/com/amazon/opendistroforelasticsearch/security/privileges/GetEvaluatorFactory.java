@@ -37,12 +37,6 @@ public class GetEvaluatorFactory {
         return ctor.newInstance(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor,
                 cih, irr, advancedModulesEnabled);
 
-//        if(settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR).equals("com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator")) {
-//            return new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
-//        } else if (settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR).equals("com.amazon.opendistroforelasticsearch.security.privileges.RangerPrivilegesEvaluator")) {
-//            return new RangerPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
-//        }
-//        return null;
     }
 
 }
