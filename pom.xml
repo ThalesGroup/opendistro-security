@@ -138,11 +138,7 @@
                     <artifactId>commons-lang</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.codahale.metrics</groupId>
-                    <artifactId>metrics-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId> org.codehaus.woodstox</groupId>
+                    <groupId>org.codehaus.woodstox</groupId>
                     <artifactId>woodstox-core-asl</artifactId>
                 </exclusion>
                 <exclusion>
@@ -410,6 +406,10 @@
             <artifactId>opensaml-saml-impl</artifactId>
             <version>3.3.0</version>
             <exclusions>
+                <exclusion>
+                    <groupId>io.dropwizard.metrics</groupId>
+                    <artifactId>metrics-core</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>joda-time</groupId>
                     <artifactId>joda-time</artifactId>
