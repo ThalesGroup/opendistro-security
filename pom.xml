@@ -219,6 +219,18 @@
             <version>0.0.8</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.ranger</groupId>
+            <artifactId>ranger-plugins-audit</artifactId>
+            <version>1.2.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka_2.11</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Guava -->
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -406,10 +418,6 @@
             <artifactId>opensaml-saml-impl</artifactId>
             <version>3.3.0</version>
             <exclusions>
-                <exclusion>
-                    <groupId>io.dropwizard.metrics</groupId>
-                    <artifactId>metrics-core</artifactId>
-                </exclusion>
                 <exclusion>
                     <groupId>joda-time</groupId>
                     <artifactId>joda-time</artifactId>
