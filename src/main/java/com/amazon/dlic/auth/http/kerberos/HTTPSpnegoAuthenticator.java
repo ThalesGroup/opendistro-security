@@ -24,10 +24,8 @@ import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 import javax.security.auth.Subject;
@@ -60,9 +58,11 @@ import com.amazon.dlic.auth.http.kerberos.util.KrbConstants;
 import com.amazon.opendistroforelasticsearch.security.auth.HTTPAuthenticator;
 import com.amazon.opendistroforelasticsearch.security.user.AuthCredentials;
 import com.google.common.base.Strings;
+import sun.security.krb5.KrbException;
 
 public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
 
+    protected static Logger logger = LogManager.getLogger(HTTPSpnegoAuthenticator.class);
     private static final String EMPTY_STRING = "";
     private static final Oid[] KRB_OIDS = new Oid[] {KrbConstants.SPNEGO, KrbConstants.KRB5MECH};
     public final static String SERVER_KEYTAB_PATH = "/etc/security/keytabs/es.service.keytab";
@@ -452,7 +452,7 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
         }
     }
 
-    public static void initSpnegoClient(String svcName, String keytabPath, String krbConf) {
+    public static void initSpnegoClient(String svcName, String keytabPath, String krbConf) throws KrbException {
         if (spnegoClient != null) {
             return;
         }
@@ -462,15 +462,28 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             sm.checkPermission(new SpecialPermission());
         }
 
-
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                System.setProperty("java.security.krb5.conf", krbConf);
+                try {
+                    System.setProperty("java.security.krb5.conf", krbConf);
+                    sun.security.krb5.Config.refresh();
+                    logger.debug("login with keytab");
+                    spnegoClient = SpnegoClient.loginWithKeyTab(svcName, keytabPath);
+                    logger.debug("login with keytab successful");
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    logger.debug("Caught exception while initSpnegoClient. Please investigate: "
+                            + e
+                            + Arrays.asList(e.getStackTrace())
+                            .stream()
+                            .map(Objects::toString)
+                            .collect(Collectors.joining("\n"))
+                    );
+                }
                 return null;
             }
         });
 
-        spnegoClient = SpnegoClient.loginWithKeyTab(svcName, keytabPath);
     }
 
     public static SpnegoClient getSpnegoClient() {

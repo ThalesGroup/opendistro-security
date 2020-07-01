@@ -25,6 +25,7 @@ import org.apache.ranger.plugin.policyengine.RangerAccessRequestImpl;
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl;
 import org.apache.ranger.plugin.policyengine.RangerAccessResult;
 import org.apache.ranger.plugin.service.RangerBasePlugin;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.action.*;
@@ -58,15 +59,20 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.RemoteClusterAware;
 import org.elasticsearch.transport.TransportRequest;
+import sun.security.krb5.KrbException;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.LoginException;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.Security;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Divyansh Jain
@@ -99,7 +105,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     private final Map<Class<?>, Method> typesCache = Collections.synchronizedMap(new HashMap<Class<?>, Method>(100));
     // private PrivilegesEvaluator.TenantHolder tenantHolder = null;
 
-    private static volatile RangerBasePlugin rangerPlugin = null;
+    private static RangerBasePlugin rangerPlugin = null;
     private String rangerUrl = null;
     private UserGroupMappingCache usrGrpCache = null;
     private boolean initUGI = false;
@@ -129,41 +135,79 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         //tenantHolder = new PrivilegesEvaluator.TenantHolder();
         //configurationRepository.subscribeOnChange("roles", tenantHolder);
 
-        String ES_PLUGIN_APP_ID = settings.get(ConfigConstants.OPENDISTRO_SECURITY_RANGER_AUTH_APP_ID);
+        log.info(String.format("es plugin app id : %s", settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID)));
+        String ES_PLUGIN_APP_ID = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
 
         if (ES_PLUGIN_APP_ID == null) {
             throw new ElasticsearchSecurityException("Open Distro Ranger plugin enabled but appId config not valid");
         }
 
-        if (!initializeUGI(settings)) {
-            log.error("UGI not getting initialized.");
+        log.info("ES_PLUGIN_APP_ID: " + ES_PLUGIN_APP_ID);
+        log.info("ES_PLUGIN_APP_ID successfully initialized");
+
+        String svcType = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "elasticsearch");
+        String appId = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
+
+        log.debug("svcType : " + svcType);
+        log.debug("appId : " + appId);
+
+        try {
+            if (!initializeUGI(settings)) {
+                log.error("UGI not getting initialized.");
+            }
+        } catch (Exception e) {
+            e.getCause();
+            e.getMessage();
+            e.printStackTrace();
         }
 
         configureRangerPlugin(settings);
+
+        log.info("Ranger Plugin successfully initialized");
+
         usrGrpCache = new UserGroupMappingCache();
         usrGrpCache.init();
+
+        log.info("RangerPrivilegesEvaluator successfully initialized");
 
     }
 
     public void configureRangerPlugin(Settings settings) {
+        log.info("configureRangerPlugin");
+
         String svcType = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "elasticsearch");
         String appId = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
 
-        RangerBasePlugin me = rangerPlugin;
-        if (me == null) {
-            synchronized(PrivilegesEvaluator.class) {
-                me = rangerPlugin;
-                if (me == null) {
-                    me = rangerPlugin = new RangerBasePlugin(svcType, appId);
+        log.debug("svcType : " + svcType);
+        log.debug("appId : " + appId);
+
+        try {
+            RangerBasePlugin me = rangerPlugin;
+            if (me == null) {
+                synchronized(RangerPrivilegesEvaluator.class) {
+                    me = rangerPlugin;
+                    if (me == null) {
+                        me = rangerPlugin = new RangerBasePlugin(svcType, appId);
+                    }
                 }
             }
-        }
-        log.debug("Calling ranger plugin init");
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SpecialPermission());
+        } catch (Exception e) {
+            throw e;
         }
 
+        log.debug("Calling ranger plugin init");
+        log.debug("Security manager");
+        try{
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(new SpecialPermission());
+            }
+        } catch (Exception e) {
+            throw e;
+        }
+
+
+        log.debug("call doPrivileged");
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 ClassLoader cl = org.apache.ranger.authorization.hadoop.config.RangerConfiguration.class.getClassLoader();
@@ -177,28 +221,48 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                     }
                 }
 
+                log.debug("pluginpath: " + pluginPath);
+
                 try {
                     Method method = URLClassLoader.class.getDeclaredMethod("addURL", new Class[]{URL.class});
                     method.setAccessible(true);
                     String rangerResourcesPath = pluginPath + "resources/";
+                    log.debug("method = " + method);
                     method.invoke(cl, new Object[]{new File(rangerResourcesPath).toURI().toURL()});
                 } catch (Exception e) {
                     log.error("Error in adding ranger config files to classpath : " + e.getMessage());
+                    e.printStackTrace();
                     if (log.isDebugEnabled()) {
                         e.printStackTrace();
                     }
                 }
-                rangerPlugin.init();
+
                 return null;
             }
         });
+
+        try {
+            log.debug("ranger init try");
+            rangerPlugin.init();
+            log.debug("ranger init try done");
+        } catch (Throwable e) {
+            log.error("Caught exception while methodX. Please investigate: "
+                    + e
+                    + Arrays.asList(e.getStackTrace())
+                    .stream()
+                    .map(Objects::toString)
+                    .collect(Collectors.joining("\n"))
+            );
+        }
+
+        log.info("end doPrivileged");
         this.rangerUrl = RangerConfiguration.getInstance().get("ranger.plugin.elasticsearch.policy.rest.url");
         log.debug("Ranger uri : " + rangerUrl);
         RangerDefaultAuditHandler auditHandler = new RangerDefaultAuditHandler();
         rangerPlugin.setResultProcessor(auditHandler);
     }
 
-    private boolean initializeUGI(Settings settings) {
+    private boolean initializeUGI(Settings settings) throws Exception {
         if (initUGI) {
             return true;
         }
@@ -212,41 +276,111 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         if (Strings.isNullOrEmpty(svcName)) {
             log.error("Acceptor kerberos principal is empty or null");
             return false;
-        }
-
-        HTTPSpnegoAuthenticator.initSpnegoClient(svcName, keytabPath, krbConf);
-
-        SpnegoClient spnegoClient = HTTPSpnegoAuthenticator.getSpnegoClient();
-
-        if (spnegoClient == null) {
-            log.error("Spnego client not initialized");
+        } else if (Strings.isNullOrEmpty(keytabPath)) {
+            log.error("Keytab Path is empty or null");
+            return false;
+        } else if (Strings.isNullOrEmpty(krbConf)) {
+            log.error("krb5 filepath is empty or null");
             return false;
         }
+
+        log.debug("hadoop home dir doPrivileged");
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                System.setProperty("java.security.krb5.conf", krbConf);
+                System.setProperty("kerberos.client.enabled","true");
+                System.setProperty("hadoop.home.dir","/usr/hdp/3.1.4.0-315/hadoop/");
+                System.setProperty("sun.security.util.debug enable", "true");
+                System.setProperty("sun.security.krb5.debug", "true");
+                return null;
+            }
+        });
+
+        log.debug("hadoop home dir doPrivileged done");
+
+
+        log.info("svcName : " + svcName);
+        log.info("keytabPath : " + keytabPath);
+        log.info("krbConf : " + krbConf);
+
+//        SpnegoClient spnegoClient = AccessController.doPrivileged(new PrivilegedAction<SpnegoClient>() {
+//            @Override
+//            public SpnegoClient run() {
+//                try {
+//                    log.debug("kinit");
+//                    // HTTPSpnegoAuthenticator.initSpnegoClient(svcName, keytabPath, krbConf);
+//                    log.debug("kinit done");
+//                    // SpnegoClient spnegoClient = HTTPSpnegoAuthenticator.getSpnegoClient();
+//                    log.debug("getSpnegoClient done");
+//                    return spnegoClient;
+//                } catch (Throwable e) {
+//                    e.printStackTrace();
+//                }
+//                return null;
+//            }
+//        });
+
+//        if (spnegoClient == null) {
+//            log.error("Spnego client not initialized");
+//            return false;
+//        }
 
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new SpecialPermission());
         }
 
-        initUGI = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                Subject subject = spnegoClient.getSubject();
+        log.info("getSecurityManager");
 
-                try {
-                    UserGroupInformation ugi = MiscUtil.createUGIFromSubject(subject);
-                    if (ugi != null) {
-                        MiscUtil.setUGILoginUser(ugi, subject);
-                    } else {
-                        log.error("Unable to initialize UGI");
+        try {
+            initUGI = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                public Boolean run() {
+                    log.info("in run");
+//                    log.debug("spnego client subject: " + spnegoClient.getSubject());
+//                    Subject subject = spnegoClient.getSubject();
+                    //log.info("getSubject : " + subject);
+                    try {
+                            log.info("loginUserFromKeytab");
+                            UserGroupInformation.loginUserFromKeytab(svcName, keytabPath);
+                            log.info("loginUserFromKeytab done");
+
+                        //UserGroupInformation ugi = MiscUtil.createUGIFromSubject(subject);
+
+//                        if (ugi != null) {
+//                            MiscUtil.setUGILoginUser(ugi, subject);
+//                            log.info("setUGILoginUser");
+//                        } else {
+//                            log.error("Unable to initialize UGI");
+//                            return false;
+//                        }
+                    } catch (Throwable t) {
+                        log.error("Caught exception in UserGroupInformation. Please investigate: "
+                                + t
+                                + Arrays.asList(t.getStackTrace())
+                                .stream()
+                                .map(Objects::toString)
+                                .collect(Collectors.joining("\n"))
+                        );
+                        log.error(t.getCause());
+                        log.error("Exception while trying to initialize UGI: " + t.getMessage());
                         return false;
                     }
-                } catch (Throwable t) {
-                    log.error("Exception while trying to initialize UGI: " + t.getMessage());
-                    return false;
+                    return true;
                 }
-                return true;
-            }
-        });
+            });
+        } catch (Throwable e){
+            log.error("Caught exception in initializeUGI. Please investigate: "
+                            + e
+                            + Arrays.asList(e.getStackTrace())
+                            .stream()
+                            .map(Objects::toString)
+                            .collect(Collectors.joining("\n"))
+            );
+            log.error(e.getCause());
+            log.error(e.getMessage());
+        }
+
+        log.info("doPrivileged");
 
         return initUGI;
     }

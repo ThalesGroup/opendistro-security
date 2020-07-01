@@ -41,15 +41,7 @@ import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -804,11 +796,88 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
 
+        log.debug("hadoop home dir doPrivileged");
+//        AccessController.doPrivileged(new PrivilegedAction() {
+//            public Object run() {
+//                log.debug("run : hadoop home dir doPrivileged");
+//
+//                String osName = System.getProperty("os.name");
+//                log.debug("os.name : " + osName);
+//                log.debug("run : hadoop home dir doPrivileged done");
+//
+//                try {
+//                    log.debug("with doPriveleges : " + org.apache.hadoop.util.StringUtils.ENV_VAR_PATTERN);
+//                } catch (Exception e) {
+//                    log.error("Caught exception while methodX. Please investigate: "
+//                            + e
+//                            + Arrays.asList(e.getStackTrace())
+//                            .stream()
+//                            .map(Objects::toString)
+//                            .collect(Collectors.joining("\n"))
+//                    );
+//                }
+//
+//                return null;
+//            }
+//        });
+
+//        try {
+//            log.debug("without doPriveleges : " + org.apache.hadoop.util.StringUtils.ENV_VAR_PATTERN);
+//        } catch (Exception e) {
+//            log.error("Caught exception while methodX. Please investigate: "
+//                    + e
+//                    + Arrays.asList(e.getStackTrace())
+//                    .stream()
+//                    .map(Objects::toString)
+//                    .collect(Collectors.joining("\n"))
+//            );
+//        }
+
+
+        //log.debug("hadoop home dir doPrivileged done");
+
+//        AccessController.doPrivileged(new PrivilegedAction() {
+//            public Object run() {
+//
+//                return null;
+//            }
+//        });
+
         try {
             evaluator = (Evaluator) GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         } catch (ClassNotFoundException | InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            e.printStackTrace();
+            try {
+                throw e;
+            } catch (ClassNotFoundException ex) {
+                log.debug("ClassNotFoundException");
+                ex.printStackTrace();
+            } catch (NoSuchMethodException ex) {
+                log.debug("NoSuchMethodException");
+                ex.printStackTrace();
+            } catch (IllegalAccessException ex) {
+                log.debug("IllegalAccessException");
+                ex.printStackTrace();
+            } catch (InvocationTargetException ex) {
+                log.debug("InvocationTargetException");
+                log.debug("cause : " + ex.getCause());
+                log.debug("stacktrace : " + ex.getCause().getStackTrace());
+                log.debug(ex.getTargetException());
+                log.debug(ex);
+                ex.printStackTrace();
+                log.error("Caught exception while methodX. Please investigate: "
+                        + ex
+                        + Arrays.asList(ex.getStackTrace())
+                        .stream()
+                        .map(Objects::toString)
+                        .collect(Collectors.joining("\n"))
+                );
+            } catch (InstantiationException ex) {
+                log.debug("InstantiationException");
+                ex.printStackTrace();
+            }
         }
+
+        log.debug("evaluator initialized");
 
         // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
@@ -1028,8 +1097,9 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED, false, Property.NodeScope, Property.Filtered));
 
             // Priviledge Evaluator Settings
-            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR, "abc", Property.NodeScope, Property.Filtered));
-            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_RANGER_AUTH_APP_ID, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "", Property.NodeScope, Property.Filtered));
 
         }
         

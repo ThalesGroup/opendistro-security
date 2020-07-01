@@ -218,6 +218,18 @@
             <version>0.0.8</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.kerb4j</groupId>
+            <artifactId>kerb4j-server-common</artifactId>
+            <version>0.0.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.jersey</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>1.9</version>
+        </dependency>
+
         <dependency> <!-- This was included to exclude the com.yammer.metrics:metrics-core:2.2.0 jar-->
             <groupId>org.apache.ranger</groupId>
             <artifactId>ranger-plugins-audit</artifactId>
