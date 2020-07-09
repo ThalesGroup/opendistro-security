@@ -14,7 +14,6 @@ import com.amazon.opendistroforelasticsearch.security.support.WildcardMatcher;
 import com.amazon.opendistroforelasticsearch.security.user.User;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
-import com.kerb4j.client.SpnegoClient;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.logging.log4j.LogManager;
@@ -26,7 +25,6 @@ import org.apache.ranger.plugin.policyengine.RangerAccessRequestImpl;
 import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl;
 import org.apache.ranger.plugin.policyengine.RangerAccessResult;
 import org.apache.ranger.plugin.service.RangerBasePlugin;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.action.*;
@@ -63,18 +61,12 @@ import org.elasticsearch.transport.TransportRequest;
 import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 
-import javax.security.auth.Subject;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginException;
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.Security;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -119,6 +111,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     private String rangerUrl = null;
     private UserGroupMappingCache usrGrpCache = null;
     private boolean initUGI = false;
+    private boolean isInitialised = false;
 
     @Inject
     public RangerPrivilegesEvaluator(final ClusterService clusterService, final ThreadPool threadPool,
@@ -185,7 +178,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         usrGrpCache.init();
 
         log.info("RangerPrivilegesEvaluator successfully initialized");
-
+        isInitialised = true;
     }
 
     public void configureRangerPlugin(Settings settings) {
@@ -1105,7 +1098,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     @Override
     public boolean isInitialized() {
         //return configModel.getSecurityRoles() != null && getRolesSettings() != null && getConfigSettings() != null;
-        return getRolesSettings() != null && getConfigSettings() != null;
+        return isInitialised;
     }
 
     @Override

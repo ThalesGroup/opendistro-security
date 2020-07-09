@@ -29,12 +29,18 @@ public abstract class AbstractEvaluator implements Evaluator {
     private final ConfigurationRepository configurationRepository;
     PrivilegesInterceptor privilegesInterceptor; // package private
     public ConfigConstants.RolesMappingResolution rolesMappingResolution;
-    public RoleMappingHolder roleMappingHolder = null;
+    RoleMappingHolder roleMappingHolder = null;
     public TenantHolder tenantHolder = null;
 
     protected AbstractEvaluator(ConfigurationRepository configurationRepository, PrivilegesInterceptor privilegesInterceptor) {
         this.configurationRepository = configurationRepository;
         this.privilegesInterceptor = privilegesInterceptor;
+    }
+
+    @Override
+    public void onChange(Settings rolesMapping) {
+        final RoleMappingHolder tmp = new RoleMappingHolder(rolesMapping);
+        roleMappingHolder = tmp;
     }
 
     public boolean multitenancyEnabled() {

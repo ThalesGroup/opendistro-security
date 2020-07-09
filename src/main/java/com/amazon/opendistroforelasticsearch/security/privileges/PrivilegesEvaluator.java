@@ -176,12 +176,6 @@ public class PrivilegesEvaluator extends AbstractEvaluator {
         this.advancedModulesEnabled = advancedModulesEnabled;
     }
 
-    @Override
-    public void onChange(Settings rolesMapping) {
-        final RoleMappingHolder tmp = new RoleMappingHolder(rolesMapping);
-        roleMappingHolder = tmp;
-    }
-
     private SecurityRoles getSecurityRoles(Set<String> roles) {
         return configModel.getSecurityRoles().filter(roles);
     }

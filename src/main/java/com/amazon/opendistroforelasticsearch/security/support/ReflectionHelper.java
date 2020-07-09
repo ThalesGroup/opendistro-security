@@ -141,7 +141,7 @@ public class ReflectionHelper {
             final Class<?> clazz = Class.forName("com.amazon.opendistroforelasticsearch.security.configuration.OpenDistroSecurityFlsDlsIndexSearcherWrapper");
             final Constructor<?> ret = clazz.getConstructor(IndexService.class,
                     Settings.class, AdminDNs.class, ClusterService.class, AuditLog.class,
-                    ComplianceIndexingOperationListener.class, ComplianceConfig.class, PrivilegesEvaluator.class);
+                    ComplianceIndexingOperationListener.class, ComplianceConfig.class, Evaluator.class);
             addLoadedModule(clazz);
             return ret;
         } catch (final Throwable e) {
