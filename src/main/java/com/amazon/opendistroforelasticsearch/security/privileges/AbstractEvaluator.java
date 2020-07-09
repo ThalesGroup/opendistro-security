@@ -27,10 +27,10 @@ public abstract class AbstractEvaluator implements Evaluator {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigurationRepository configurationRepository;
-    private PrivilegesInterceptor privilegesInterceptor;
-    private ConfigConstants.RolesMappingResolution rolesMappingResolution;
-    private RoleMappingHolder roleMappingHolder = null;
-    private TenantHolder tenantHolder = null;
+    PrivilegesInterceptor privilegesInterceptor; // package private
+    public ConfigConstants.RolesMappingResolution rolesMappingResolution;
+    public RoleMappingHolder roleMappingHolder = null;
+    public TenantHolder tenantHolder = null;
 
     protected AbstractEvaluator(ConfigurationRepository configurationRepository, PrivilegesInterceptor privilegesInterceptor) {
         this.configurationRepository = configurationRepository;
@@ -92,7 +92,7 @@ public abstract class AbstractEvaluator implements Evaluator {
         return Collections.unmodifiableSet(configuredTenants);
     }
 
-    private class TenantHolder implements ConfigurationChangeListener {
+    public class TenantHolder implements ConfigurationChangeListener {
 
         private SetMultimap<String, Tuple<String, Boolean>> tenantsMM = null;
 
@@ -184,14 +184,14 @@ public abstract class AbstractEvaluator implements Evaluator {
         }
     }
 
-    private class RoleMappingHolder {
+    public class RoleMappingHolder {
 
         private ListMultimap<String, String> users;
         private ListMultimap<Set<String>, String> abars;
         private ListMultimap<String, String> bars;
         private ListMultimap<String, String> hosts;
 
-        private RoleMappingHolder(Settings rolesMapping) {
+        public RoleMappingHolder(Settings rolesMapping) {
 
             if (rolesMapping != null) {
 
@@ -230,7 +230,7 @@ public abstract class AbstractEvaluator implements Evaluator {
             }
         }
 
-        private Set<String> map(final User user, final TransportAddress caller) {
+        public Set<String> map(final User user, final TransportAddress caller) {
 
             if (user == null || users == null || abars == null || bars == null || hosts == null) {
                 return Collections.emptySet();

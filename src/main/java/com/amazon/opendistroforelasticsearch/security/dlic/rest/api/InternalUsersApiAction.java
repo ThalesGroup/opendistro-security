@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
@@ -58,7 +59,7 @@ public class InternalUsersApiAction extends PatchableResourceApiAction {
     @Inject
     public InternalUsersApiAction(final Settings settings, final Path configPath, final RestController controller,
                                   final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl,
-                                  final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator,
+                                  final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator evaluator,
                                   ThreadPool threadPool, AuditLog auditLog) {
         super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool,
                 auditLog);

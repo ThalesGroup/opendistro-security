@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.security.dlic.rest.api;
 
 import java.nio.file.Path;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -40,8 +41,8 @@ public class RolesMappingApiAction extends PatchableResourceApiAction {
 
 	@Inject
 	public RolesMappingApiAction(final Settings settings, final Path configPath, final RestController controller, final Client client,
-			final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
-            final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
+								 final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
+								 final PrincipalExtractor principalExtractor, final Evaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
 		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool, auditLog);
 	}
 

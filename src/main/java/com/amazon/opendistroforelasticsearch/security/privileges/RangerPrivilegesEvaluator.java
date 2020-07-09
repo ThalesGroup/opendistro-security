@@ -15,6 +15,7 @@ import com.amazon.opendistroforelasticsearch.security.user.User;
 import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import com.kerb4j.client.SpnegoClient;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,9 +60,12 @@ import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.RemoteClusterAware;
 import org.elasticsearch.transport.TransportRequest;
+import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
@@ -96,14 +100,20 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     private final AuditLog auditLog;
     private ThreadContext threadContext;
     //private final static IndicesOptions DEFAULT_INDICES_OPTIONS = IndicesOptions.lenientExpandOpen();
-    // private final ConfigurationRepository configurationRepository;
+    //private final ConfigurationRepository configurationRepository;
+    private final ClusterInfoHolder clusterInfoHolder;
+    private final SnapshotRestoreEvaluator snapshotRestoreEvaluator;
+    private final OpenDistroSecurityIndexAccessEvaluator securityIndexAccessEvaluator;
+    private final OpenDistroProtectedIndexAccessEvaluator protectedIndexAccessEvaluator;
+    private final TermsAggregationEvaluator termsAggregationEvaluator;
+    private final DlsFlsEvaluator dlsFlsEvaluator;
+    private final boolean advancedModulesEnabled;
 
     //private final boolean typeSecurityDisabled = false;
     private final ConfigModel configModel;
     private final IndexResolverReplacer irr;
     private final Map<Class<?>, Method> typeCache = Collections.synchronizedMap(new HashMap<Class<?>, Method>(100));
     private final Map<Class<?>, Method> typesCache = Collections.synchronizedMap(new HashMap<Class<?>, Method>(100));
-    // private PrivilegesEvaluator.TenantHolder tenantHolder = null;
 
     private static RangerBasePlugin rangerPlugin = null;
     private String rangerUrl = null;
@@ -118,13 +128,12 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 
         super(configurationRepository, privilegesInterceptor);
         log.info("### Loaded Privilege Evaluator : RangerPrivilegesEvaluator");
-        // this.configurationRepository = configurationRepository;
         this.clusterService = clusterService;
         this.resolver = resolver;
         this.auditLog = auditLog;
 
         this.threadContext = threadPool.getThreadContext();
-        // this.privilegesInterceptor = privilegesInterceptor;
+        this.clusterInfoHolder = clusterInfoHolder;
 
         //this.typeSecurityDisabled = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_DISABLE_TYPE_SECURITY, false);
         configModel = new ConfigModel(ah);
@@ -132,8 +141,15 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         configurationRepository.subscribeOnChange("rolesmapping", this);
         this.irr = irr;
 
-        //tenantHolder = new PrivilegesEvaluator.TenantHolder();
-        //configurationRepository.subscribeOnChange("roles", tenantHolder);
+        snapshotRestoreEvaluator = new SnapshotRestoreEvaluator(settings, auditLog);
+        securityIndexAccessEvaluator = new OpenDistroSecurityIndexAccessEvaluator(settings, auditLog);
+        protectedIndexAccessEvaluator = new OpenDistroProtectedIndexAccessEvaluator(settings, auditLog);
+        dlsFlsEvaluator = new DlsFlsEvaluator(settings, threadPool);
+        termsAggregationEvaluator = new TermsAggregationEvaluator();
+        tenantHolder = new TenantHolder();
+        this.advancedModulesEnabled = advancedModulesEnabled;
+
+        configurationRepository.subscribeOnChange("roles", tenantHolder);
 
         log.info(String.format("es plugin app id : %s", settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID)));
         String ES_PLUGIN_APP_ID = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
@@ -292,6 +308,13 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 System.setProperty("hadoop.home.dir","/usr/hdp/3.1.4.0-315/hadoop/");
                 System.setProperty("sun.security.util.debug enable", "true");
                 System.setProperty("sun.security.krb5.debug", "true");
+                System.setProperty("hadoop.security.authentication","kerberos");
+                try {
+                    Config.refresh();
+                } catch (KrbException e) {
+                    e.printStackTrace();
+                    log.debug(e.getCause());
+                }
                 return null;
             }
         });
@@ -308,9 +331,9 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 //            public SpnegoClient run() {
 //                try {
 //                    log.debug("kinit");
-//                    // HTTPSpnegoAuthenticator.initSpnegoClient(svcName, keytabPath, krbConf);
+//                    HTTPSpnegoAuthenticator.initSpnegoClient(svcName, keytabPath, krbConf);
 //                    log.debug("kinit done");
-//                    // SpnegoClient spnegoClient = HTTPSpnegoAuthenticator.getSpnegoClient();
+//                    SpnegoClient spnegoClient = HTTPSpnegoAuthenticator.getSpnegoClient();
 //                    log.debug("getSpnegoClient done");
 //                    return spnegoClient;
 //                } catch (Throwable e) {
@@ -336,18 +359,28 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
             initUGI = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                 public Boolean run() {
                     log.info("in run");
-//                    log.debug("spnego client subject: " + spnegoClient.getSubject());
-//                    Subject subject = spnegoClient.getSubject();
+                    //log.debug("spnego client subject: " + spnegoClient.getSubject());
+                    //Subject subject = spnegoClient.getSubject();
                     //log.info("getSubject : " + subject);
                     try {
                             log.info("loginUserFromKeytab");
-                            UserGroupInformation.loginUserFromKeytab(svcName, keytabPath);
-                            log.info("loginUserFromKeytab done");
+                            //UserGroupInformation.loginUserFromKeytab(svcName, keytabPath);
+                            org.apache.hadoop.conf.Configuration conf = new  org.apache.hadoop.conf.Configuration();
+                            conf.addResource(new Path("file:///usr/hdp/3.1.4.0-315/hadoop/conf/core-site.xml"));
+                            conf.addResource(new Path("file:///usr/hdp/3.1.4.0-315/hadoop/conf/hdfs-site.xml"));
+                            log.debug(conf);
+                            UserGroupInformation.setConfiguration(conf);
+                            UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(svcName, keytabPath);
+                            MiscUtil.setUGILoginUser(ugi, null);
 
-                        //UserGroupInformation ugi = MiscUtil.createUGIFromSubject(subject);
+                            log.info("getLoginUser");
+                            log.debug("isSecurityEnabled : " + UserGroupInformation.isSecurityEnabled());
+                            log.info("getLoginUser done");
+
+                            // UserGroupInformation ugi = MiscUtil.createUGIFromSubject(subject);
 
 //                        if (ugi != null) {
-//                            MiscUtil.setUGILoginUser(ugi, subject);
+//                            //MiscUtil.setUGILoginUser(ugi, subject);
 //                            log.info("setUGILoginUser");
 //                        } else {
 //                            log.error("Unable to initialize UGI");
@@ -1071,7 +1104,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 
     @Override
     public boolean isInitialized() {
-        return configModel.getSecurityRoles() != null && getRolesSettings() != null && getConfigSettings() != null;
+        //return configModel.getSecurityRoles() != null && getRolesSettings() != null && getConfigSettings() != null;
+        return getRolesSettings() != null && getConfigSettings() != null;
     }
 
     @Override

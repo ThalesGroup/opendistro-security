@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.index.IndexResponse;
@@ -58,7 +59,7 @@ public abstract class PatchableResourceApiAction extends AbstractApiAction {
 
     public PatchableResourceApiAction(Settings settings, Path configPath, RestController controller, Client client,
                                       AdminDNs adminDNs, IndexBaseConfigurationRepository cl, ClusterService cs,
-                                      PrincipalExtractor principalExtractor, PrivilegesEvaluator evaluator, ThreadPool threadPool,
+                                      PrincipalExtractor principalExtractor, Evaluator evaluator, ThreadPool threadPool,
                                       AuditLog auditLog) {
         super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool,
                 auditLog);

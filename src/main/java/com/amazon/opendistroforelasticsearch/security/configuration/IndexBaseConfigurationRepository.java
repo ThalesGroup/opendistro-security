@@ -33,12 +33,7 @@ package com.amazon.opendistroforelasticsearch.security.configuration;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,7 +95,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
     private ThreadPool threadPool;
 
     private IndexBaseConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool,
-            Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
+            Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig, boolean isDefaultEvaluator) {
         this.opendistrosecurityIndex = settings.get(ConfigConstants.OPENDISTRO_SECURITY_CONFIG_INDEX_NAME, ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CONFIG_INDEX);
         this.settings = settings;
         this.client = client;
@@ -195,6 +190,13 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                                     break;
                                 } catch (Exception e) {
                                     LOGGER.debug("Unable to load configuration due to {}", String.valueOf(ExceptionUtils.getRootCause(e)));
+                                    LOGGER.error("Caught exception in load config . Please investigate: "
+                                            + e
+                                            + Arrays.asList(e.getStackTrace())
+                                            .stream()
+                                            .map(Objects::toString)
+                                            .collect(Collectors.joining("\n"))
+                                    );
                                     try {
                                         Thread.sleep(3000);
                                     } catch (InterruptedException e1) {
@@ -268,14 +270,14 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                     LOGGER.error("Failure while executing IndicesExistsRequest {}",e2, e2);
                     bgThread.start();
                 }
-                                
+
             }
         });
     }
 
 
-    public static ConfigurationRepository create(Settings settings, final Path configPath, final ThreadPool threadPool, Client client,  ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
-        final IndexBaseConfigurationRepository repository = new IndexBaseConfigurationRepository(settings, configPath, threadPool, client, clusterService, auditLog, complianceConfig);
+    public static ConfigurationRepository create(Settings settings, final Path configPath, final ThreadPool threadPool, Client client,  ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig, boolean isDefaultEvaluator) {
+        final IndexBaseConfigurationRepository repository = new IndexBaseConfigurationRepository(settings, configPath, threadPool, client, clusterService, auditLog, complianceConfig, isDefaultEvaluator);
         return repository;
     }
 
@@ -345,7 +347,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
         LOGGER.debug("Subscribe on configuration changes by type {} with listener {}", configurationType, listener);
         configTypeToChancheListener.put(configurationType, listener);
     }
-    
+
     private synchronized void notifyAboutChanges(Map<String, Settings> typeToConfig) {
         for (Map.Entry<String, ConfigurationChangeListener> entry : configTypeToChancheListener.entries()) {
             String type = entry.getKey();
@@ -394,6 +396,13 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                 retVal.putAll(validate(cl.load(configTypes.toArray(new String[0]), 30, TimeUnit.SECONDS), configTypes));
             }
         } catch (Exception e) {
+            LOGGER.error("Caught exception in loadConfigurations. Please investigate: "
+                    + e
+                    + Arrays.asList(e.getStackTrace())
+                    .stream()
+                    .map(Objects::toString)
+                    .collect(Collectors.joining("\n"))
+            );
             throw new ElasticsearchException(e);
         }
 

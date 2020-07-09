@@ -20,6 +20,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.NoOpValidator;
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import org.elasticsearch.client.Client;
@@ -41,7 +42,7 @@ public class AuthTokenProcessorAction extends AbstractApiAction {
 	@Inject
 	public AuthTokenProcessorAction(final Settings settings, final Path configPath, final RestController controller,
 			final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl,
-			final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator,
+			final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator evaluator,
 			ThreadPool threadPool, AuditLog auditLog) {
 		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool,
 				auditLog);

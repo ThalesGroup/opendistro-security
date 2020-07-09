@@ -782,66 +782,30 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         adminDns = new AdminDNs(settings);
         //final PrincipalExtractor pe = new DefaultPrincipalExtractor();
-        cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig);
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, irr);
+        //final boolean isDefaultEvaluator = settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR).equals("com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator");
+
+        final boolean isDefaultEvaluator = true;
+        if (isDefaultEvaluator) {
+            cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig, true);
+            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, irr);
+        } else {
+            cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig, false);
+        }
         final InternalAuthenticationBackend iab = new InternalAuthenticationBackend(cr);
         final XFFResolver xffResolver = new XFFResolver(threadPool);
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, xffResolver);
+        if (isDefaultEvaluator) {
+            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, xffResolver);
+        }
         log.info("BackendRegistry call here");
         backendRegistry = new BackendRegistry(settings, configPath, adminDns, xffResolver, iab, auditLog, threadPool);
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
+        if (isDefaultEvaluator) {
+            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
+        }
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
         log.info("OpenDistroSecurityPlugin settings : " + settings);
         // more like es settings
 
         log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
-
-        log.debug("hadoop home dir doPrivileged");
-//        AccessController.doPrivileged(new PrivilegedAction() {
-//            public Object run() {
-//                log.debug("run : hadoop home dir doPrivileged");
-//
-//                String osName = System.getProperty("os.name");
-//                log.debug("os.name : " + osName);
-//                log.debug("run : hadoop home dir doPrivileged done");
-//
-//                try {
-//                    log.debug("with doPriveleges : " + org.apache.hadoop.util.StringUtils.ENV_VAR_PATTERN);
-//                } catch (Exception e) {
-//                    log.error("Caught exception while methodX. Please investigate: "
-//                            + e
-//                            + Arrays.asList(e.getStackTrace())
-//                            .stream()
-//                            .map(Objects::toString)
-//                            .collect(Collectors.joining("\n"))
-//                    );
-//                }
-//
-//                return null;
-//            }
-//        });
-
-//        try {
-//            log.debug("without doPriveleges : " + org.apache.hadoop.util.StringUtils.ENV_VAR_PATTERN);
-//        } catch (Exception e) {
-//            log.error("Caught exception while methodX. Please investigate: "
-//                    + e
-//                    + Arrays.asList(e.getStackTrace())
-//                    .stream()
-//                    .map(Objects::toString)
-//                    .collect(Collectors.joining("\n"))
-//            );
-//        }
-
-
-        //log.debug("hadoop home dir doPrivileged done");
-
-//        AccessController.doPrivileged(new PrivilegedAction() {
-//            public Object run() {
-//
-//                return null;
-//            }
-//        });
 
         try {
             evaluator = (Evaluator) GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
@@ -860,11 +824,8 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
             } catch (InvocationTargetException ex) {
                 log.debug("InvocationTargetException");
                 log.debug("cause : " + ex.getCause());
-                log.debug("stacktrace : " + ex.getCause().getStackTrace());
-                log.debug(ex.getTargetException());
-                log.debug(ex);
                 ex.printStackTrace();
-                log.error("Caught exception while methodX. Please investigate: "
+                log.error("Caught exception while GetEvaluatorFactory.getEvaluator() . Please investigate: "
                         + ex
                         + Arrays.asList(ex.getStackTrace())
                         .stream()
@@ -882,10 +843,12 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         
         final CompatConfig compatConfig = new CompatConfig(environment);
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
-        
-        odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
+        if (isDefaultEvaluator) {
+            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig); // subscribeOnChange (config, roles, rolesmapping, internalusers, actiongroups) only in the case of default evaluator
+        }
+
+        odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
         final String principalExtractorClass = settings.get(SSLConfigConstants.OPENDISTRO_SECURITY_SSL_TRANSPORT_PRINCIPAL_EXTRACTOR_CLASS, null);
 
@@ -899,13 +862,15 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
                 interClusterRequestEvaluator, cs, Objects.requireNonNull(sslExceptionHandler), Objects.requireNonNull(cih));
         components.add(principalExtractor);
 
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, new ConfigurationChangeListener() {
+        if (isDefaultEvaluator) {
+            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, new ConfigurationChangeListener() {
 
-            @Override
-            public void onChange(Settings unused) {
-                //auditLog.logExternalConfig(settings, environment);
-            }
-        });
+                @Override
+                public void onChange(Settings unused) {
+                    //auditLog.logExternalConfig(settings, environment);
+                }
+            });
+        }
 
         // NOTE: We need to create DefaultInterClusterRequestEvaluator before creating ConfigurationRepository since the latter requires security index to be accessible which means
         // communication with other nodes is already up. However for the communication to be up, there needs to be trusted nodes_dn. Hence the base values from elasticsearch.yml
@@ -926,6 +891,8 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         components.add(odsi);
 
         securityRestHandler = new OpenDistroSecurityRestFilter(backendRegistry, auditLog, threadPool, principalExtractor, settings, configPath, compatConfig);
+
+        log.debug("createComponents done");
 
         return components;
 

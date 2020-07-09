@@ -21,6 +21,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseCon
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.NodesDnValidator;
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
@@ -69,9 +70,9 @@ public class NodesDnApiAction extends PatchableResourceApiAction {
 
     @Inject
     public NodesDnApiAction(
-        final Settings settings, final Path configPath, final RestController controller, final Client client, final AdminDNs adminDNs,
-        final IndexBaseConfigurationRepository cl, final ClusterService cs, final PrincipalExtractor principalExtractor,
-        final PrivilegesEvaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
+            final Settings settings, final Path configPath, final RestController controller, final Client client, final AdminDNs adminDNs,
+            final IndexBaseConfigurationRepository cl, final ClusterService cs, final PrincipalExtractor principalExtractor,
+            final Evaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
         super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool, auditLog);
         this.staticNodesDnFromEsYml = settings.getAsList(ConfigConstants.OPENDISTRO_SECURITY_NODES_DN, Collections.emptyList());
     }

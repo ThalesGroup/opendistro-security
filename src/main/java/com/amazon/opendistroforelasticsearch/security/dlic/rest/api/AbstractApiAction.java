@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -81,7 +82,7 @@ public abstract class AbstractApiAction extends BaseRestHandler {
 
 	protected AbstractApiAction(final Settings settings, final Path configPath, final RestController controller,
 								final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl,
-								final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator,
+								final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator evaluator,
 								ThreadPool threadPool, AuditLog auditLog) {
 		super(settings);
 		this.settings = settings;

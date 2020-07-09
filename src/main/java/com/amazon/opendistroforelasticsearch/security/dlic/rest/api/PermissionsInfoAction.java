@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -52,11 +53,11 @@ public class PermissionsInfoAction extends BaseRestHandler {
 
 	private final RestApiPrivilegesEvaluator restApiPrivilegesEvaluator;
 	private final ThreadPool threadPool;
-	private final PrivilegesEvaluator privilegesEvaluator;
+	private final Evaluator privilegesEvaluator;
 
 	protected PermissionsInfoAction(final Settings settings, final Path configPath, final RestController controller, final Client client,
-			final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
-			final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
+									final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
+									final PrincipalExtractor principalExtractor, final Evaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
 		super(settings);
 		controller.registerHandler(Method.GET, "/_opendistro/_security/api/permissionsinfo", this);
 		this.threadPool = threadPool;

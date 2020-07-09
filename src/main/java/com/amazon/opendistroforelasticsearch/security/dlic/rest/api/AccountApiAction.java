@@ -22,6 +22,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseCon
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AccountValidator;
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
@@ -60,13 +61,13 @@ import static com.amazon.opendistroforelasticsearch.security.dlic.rest.support.U
 public class AccountApiAction extends AbstractApiAction {
 
     private static final String RESOURCE_NAME = "account";
-    private final PrivilegesEvaluator privilegesEvaluator;
+    private final Evaluator privilegesEvaluator;
     private final ThreadContext threadContext;
     private final IndexBaseConfigurationRepository indexBaseConfigurationRepository;
 
     public AccountApiAction(final Settings settings, final Path configPath, final RestController controller,
                             final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository indexBaseConfigurationRepository,
-                            final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator,
+                            final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator privilegesEvaluator,
                             ThreadPool threadPool, AuditLog auditLog) {
         super(settings, configPath, controller, client, adminDNs, indexBaseConfigurationRepository, cs, principalExtractor, privilegesEvaluator, threadPool,
                 auditLog);

@@ -117,7 +117,7 @@ public class ReflectionHelper {
             final Class<?> clazz = Class.forName("com.amazon.opendistroforelasticsearch.security.dlic.rest.api.OpenDistroSecurityRestApiActions");
             final Collection<RestHandler> ret = (Collection<RestHandler>) clazz
                     .getDeclaredMethod("getHandler", Settings.class, Path.class, RestController.class, Client.class, AdminDNs.class, IndexBaseConfigurationRepository.class,
-                            ClusterService.class, PrincipalExtractor.class, PrivilegesEvaluator.class, ThreadPool.class, AuditLog.class)
+                            ClusterService.class, PrincipalExtractor.class, Evaluator.class, ThreadPool.class, AuditLog.class)
                     .invoke(null, settings, configPath, restController, localClient, adminDns, cr, cs, principalExtractor, evaluator, threadPool, auditlog);
             addLoadedModule(clazz);
             return ret;

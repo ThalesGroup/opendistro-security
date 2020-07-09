@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
@@ -52,7 +53,7 @@ public class RestApiPrivilegesEvaluator {
 	protected final Logger logger = LogManager.getLogger(this.getClass());
 
 	private final AdminDNs adminDNs;
-	private final PrivilegesEvaluator privilegesEvaluator;
+	private final Evaluator privilegesEvaluator;
 	private final PrincipalExtractor principalExtractor;
 	private final Path configPath;
 	private final ThreadPool threadPool;
@@ -76,8 +77,8 @@ public class RestApiPrivilegesEvaluator {
 
 	private final Boolean roleBasedAccessEnabled;
 
-	public RestApiPrivilegesEvaluator(Settings settings, AdminDNs adminDNs, PrivilegesEvaluator privilegesEvaluator, PrincipalExtractor principalExtractor, Path configPath,
-			ThreadPool threadPool) {
+	public RestApiPrivilegesEvaluator(Settings settings, AdminDNs adminDNs, Evaluator privilegesEvaluator, PrincipalExtractor principalExtractor, Path configPath,
+									  ThreadPool threadPool) {
 
 		this.adminDNs = adminDNs;
 		this.privilegesEvaluator = privilegesEvaluator;

@@ -377,6 +377,9 @@ public class BackendRegistry implements ConfigurationChangeListener {
         authBackendFailureListeners = Multimaps.unmodifiableMultimap(authBackendFailureListeners0);
 
         //Open Distro Security no default authc
+        log.debug("restAuthDomains.isEmpty() : " + restAuthDomains.isEmpty());
+        log.debug("anonymousAuthEnabled : " + anonymousAuthEnabled);
+        log.debug("injectedUserEnabled : " + injectedUserEnabled);
         initialized = !restAuthDomains.isEmpty() || anonymousAuthEnabled || injectedUserEnabled;
 
         if(originalDestroyableComponents != null) {
