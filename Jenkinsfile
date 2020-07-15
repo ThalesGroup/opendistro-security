@@ -71,15 +71,15 @@ pipeline {
     }
     }
 
-    stage("ARTIFACTS PUSH"){
-    steps{
-    script{
-            //Global Lib for RPM Push
-            //rpm_push(<env.buildType No need to change>, <dist is default pls specify RPM file path, <artifactory target path>) ie.        
-            // rpm_push(env.buildType, env.ARTIFACT_SRC1, env.ARTIFACT_DEST1)
-            // tar_push(env.buildType, env.ARTIFACT_SRC2, env.ARTIFACT_DEST2)
+    // stage("ARTIFACTS PUSH"){
+    // steps{
+    // script{
+    //         //Global Lib for RPM Push
+    //         //rpm_push(<env.buildType No need to change>, <dist is default pls specify RPM file path, <artifactory target path>) ie.        
+    //         rpm_push(env.buildType, env.ARTIFACT_SRC1, env.ARTIFACT_DEST1)
+    //         tar_push(env.buildType, env.ARTIFACT_SRC2, env.ARTIFACT_DEST2)
 
-    }}}
+    // }}}
 
 stage("Deploy and Auto-test"){  //This stage contain Example deployment method/Ansible playbook Trigger
     steps{
