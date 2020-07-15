@@ -31,8 +31,8 @@ pipeline {
     stage("Compile, Build and Test") {
       steps {
       script {
-        echo "Running Test"
-        sh 'mvn clean test'
+        echo "Skipping Running Test"
+        // sh 'mvn clean test'
         echo "Running Build"
         sh 'mvn clean package -Padvanced -DskipTests'
         echo "Running Cobertura"
@@ -76,8 +76,8 @@ pipeline {
     script{
             //Global Lib for RPM Push
             //rpm_push(<env.buildType No need to change>, <dist is default pls specify RPM file path, <artifactory target path>) ie.        
-            rpm_push(env.buildType, env.ARTIFACT_SRC1, env.ARTIFACT_DEST1)
-            tar_push(env.buildType, env.ARTIFACT_SRC2, env.ARTIFACT_DEST2)
+            // rpm_push(env.buildType, env.ARTIFACT_SRC1, env.ARTIFACT_DEST1)
+            // tar_push(env.buildType, env.ARTIFACT_SRC2, env.ARTIFACT_DEST2)
 
     }}}
 
@@ -96,8 +96,8 @@ stage("Deploy and Auto-test"){  //This stage contain Example deployment method/A
           reports_alerts(env.CHECKSTYLE_FILE, env.UNIT_RESULT, env.COBERTURA_REPORT, env.ALLURE_REPORT, env.HTML_REPORT)
           //Global Lib for Reports publishing
  
-          postBuild(env.ARCHIVE_RPM_PATH)
-          postBuild(env.ARCHIVE_ZIP_PATH)
+          // postBuild(env.ARCHIVE_RPM_PATH)
+          // postBuild(env.ARCHIVE_ZIP_PATH)
          //Global Lib for post build actions eg: artifacts archive
  
           slackalert(env.SLACK_CHANNEL)
