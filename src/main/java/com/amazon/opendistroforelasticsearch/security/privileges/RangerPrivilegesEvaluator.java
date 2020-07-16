@@ -48,6 +48,7 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -153,12 +154,6 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 
         log.info("ES_PLUGIN_APP_ID: " + ES_PLUGIN_APP_ID);
         log.info("ES_PLUGIN_APP_ID successfully initialized");
-
-        String svcType = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "elasticsearch");
-        String appId = settings.get(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID);
-
-        log.debug("svcType : " + svcType);
-        log.debug("appId : " + appId);
 
         try {
             if (!initializeUGI(settings)) {
@@ -271,19 +266,10 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         rangerPlugin.setResultProcessor(auditHandler);
     }
 
-    private boolean initializeUGI(Settings settings) throws Exception {
-        if (initUGI) {
-            return true;
-        }
-
-        String svcName = settings.get(ConfigConstants.OPENDISTRO_KERBEROS_ACCEPTOR_PRINCIPAL);
-        String keytabPath = settings.get(ConfigConstants.OPENDISTRO_KERBEROS_ACCEPTOR_KEYTAB_FILEPATH,
-                HTTPSpnegoAuthenticator.SERVER_KEYTAB_PATH);
-        String krbConf = settings.get(ConfigConstants.OPENDISTRO_KERBEROS_KRB5_FILEPATH,
-                HTTPSpnegoAuthenticator.KRB5_CONF);
-
-        if (Strings.isNullOrEmpty(svcName)) {
-            log.error("Acceptor kerberos principal is empty or null");
+    private boolean validateSettings(String keytabPrincipal, String keytabPath, String krbConf, String hadoopHomeDir,
+                                     String coreSiteXmlPath, String hdfsSiteXmlPath) {
+        if (Strings.isNullOrEmpty(keytabPrincipal)) {
+            log.error("Kerberos principal is empty or null");
             return false;
         } else if (Strings.isNullOrEmpty(keytabPath)) {
             log.error("Keytab Path is empty or null");
@@ -291,14 +277,46 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         } else if (Strings.isNullOrEmpty(krbConf)) {
             log.error("krb5 filepath is empty or null");
             return false;
+        }  else if (Strings.isNullOrEmpty(coreSiteXmlPath)) {
+            log.error("core-site.xml filepath is empty or null");
+            return false;
+        } else if (Strings.isNullOrEmpty(hdfsSiteXmlPath)) {
+            log.error("hdfs-site.xml filepath is empty or null");
+            return false;
+        } else if (Strings.isNullOrEmpty(hadoopHomeDir)) {
+            log.error("hadoop home directory is empty or null");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean initializeUGI(Settings settings) throws Exception {
+        if (initUGI) {
+            return true;
         }
 
+        String keytabPrincipal = settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_PRINCIPAL);
+        String keytabPath = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH,
+                HTTPSpnegoAuthenticator.SERVER_KEYTAB_PATH));
+        String krbConf = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_KRB5_FILEPATH,
+                HTTPSpnegoAuthenticator.KRB5_CONF));
+        String hadoopHomeDir = settings.get(ConfigConstants.OPENDISTRO_HADOOP_HOME_DIR);
+        String coreSiteXmlPath = settings.get(ConfigConstants.OPENDISTRO_HADOOP_CORE_SITE_XML);
+        String hdfsSiteXmlPath = settings.get(ConfigConstants.OPENDISTRO_HADOOP_HDFS_SITE_XML);
+
+        log.info("keytabPath : " + keytabPath);
+        log.info ("krbConf : " + krbConf);
+
+        if (!validateSettings(keytabPrincipal, keytabPath, krbConf, hadoopHomeDir, coreSiteXmlPath, hdfsSiteXmlPath))
+            return false;
+
+        log.debug("validated settings");
         log.debug("hadoop home dir doPrivileged");
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 System.setProperty("java.security.krb5.conf", krbConf);
                 System.setProperty("kerberos.client.enabled","true");
-                System.setProperty("hadoop.home.dir","/usr/hdp/3.1.4.0-315/hadoop/");
+                System.setProperty("hadoop.home.dir",hadoopHomeDir);
                 System.setProperty("sun.security.util.debug enable", "true");
                 System.setProperty("sun.security.krb5.debug", "true");
                 System.setProperty("hadoop.security.authentication","kerberos");
@@ -314,10 +332,6 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
 
         log.debug("hadoop home dir doPrivileged done");
 
-
-        log.info("svcName : " + svcName);
-        log.info("keytabPath : " + keytabPath);
-        log.info("krbConf : " + krbConf);
 
 //        SpnegoClient spnegoClient = AccessController.doPrivileged(new PrivilegedAction<SpnegoClient>() {
 //            @Override
@@ -359,11 +373,11 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                             log.info("loginUserFromKeytab");
                             //UserGroupInformation.loginUserFromKeytab(svcName, keytabPath);
                             org.apache.hadoop.conf.Configuration conf = new  org.apache.hadoop.conf.Configuration();
-                            conf.addResource(new Path("file:///usr/hdp/3.1.4.0-315/hadoop/conf/core-site.xml"));
-                            conf.addResource(new Path("file:///usr/hdp/3.1.4.0-315/hadoop/conf/hdfs-site.xml"));
+                            conf.addResource(new Path(coreSiteXmlPath));
+                            conf.addResource(new Path(hdfsSiteXmlPath));
                             log.debug(conf);
                             UserGroupInformation.setConfiguration(conf);
-                            UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(svcName, keytabPath);
+                            UserGroupInformation ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(keytabPrincipal, keytabPath);
                             MiscUtil.setUGILoginUser(ugi, null);
 
                             log.info("getLoginUser");

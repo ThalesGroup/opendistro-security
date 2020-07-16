@@ -232,11 +232,14 @@ public class ConfigConstants {
     public static final String OPENDISTRO_SECURITY_SSL_ONLY = "opendistro_security.ssl_only";
     public static final String OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED = "opendistro_security.ssl_cert_reload_enabled";
     public static final String OPENDISTRO_SECURITY_DISABLE_ENVVAR_REPLACEMENT = "opendistro_security.disable_envvar_replacement";
-    public static final String OPENDISTRO_KERBEROS_ACCEPTOR_PRINCIPAL = "opendistro_security.kerberos.acceptor_principal";
-    public static final String OPENDISTRO_KERBEROS_ACCEPTOR_KEYTAB_FILEPATH = "opendistro_security.kerberos.acceptor_keytab_filepath";
-    public static final String OPENDISTRO_KERBEROS_KRB5_FILEPATH = "opendistro_security.kerberos.krb5_filepath";
+
+    public static final String OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH = "opendistro_security.kerberos.ugi_keytab_filepath";
+    public static final String OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_PRINCIPAL = "opendistro_security.kerberos.ugi_keytab_principal";
     public static final String OPENDISTRO_AUTH_RANGER_SERVICE_TYPE = "opendistro_security.ranger.service_type";
     public static final String OPENDISTRO_AUTH_RANGER_APP_ID = "opendistro_security.ranger.app_id";
+    public static final String OPENDISTRO_HADOOP_HOME_DIR = "opendistro_security.hadoop.home_dir";
+    public static final String OPENDISTRO_HADOOP_CORE_SITE_XML = "opendistro_security.hadoop.core_site_xml_path";
+    public static final String OPENDISTRO_HADOOP_HDFS_SITE_XML = "opendistro_security.hadoop.hdfs_site_xml_path";
 
     public enum RolesMappingResolution {
         MAPPING_ONLY,

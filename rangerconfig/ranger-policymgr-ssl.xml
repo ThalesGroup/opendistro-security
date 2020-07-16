@@ -31,14 +31,14 @@
     </property>
     <property>
         <name>xasecure.policymgr.clientssl.keystore.credential.file</name>
-        <value>jceks://file/hadoop.security.authenticationetc/ranger/rafd002_elasticsearch/cred.jceks</value>
+        <value>localjceks://file/etc/elasticsearch/cred.jceks</value>
         <description>
             java keystore credential file
         </description>
     </property>
     <property>
         <name>xasecure.policymgr.clientssl.truststore.credential.file</name>
-        <value>jceks://file/etc/ranger/rafd002_elasticsearch/cred.jceks</value>
+        <value>localjceks://file/etc/elasticsearch/cred.jceks</value>
         <description>
             java truststore credential file
         </description>

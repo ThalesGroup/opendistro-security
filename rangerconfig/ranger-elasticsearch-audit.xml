@@ -20,56 +20,56 @@
 	<property>
 		<name>xasecure.audit.is.enabled</name>
 		<value>false</value>
-	</property>	
+	</property>
 
     <!-- Solr audit provider configuration -->
 
 	<property>
 		<name>xasecure.audit.destination.solr</name>
 		<value>false</value>
-	</property>	
+	</property>
 
 	<property>
 		<name>xasecure.audit.destination.solr.urls</name>
 		<value>NONE</value>
-	</property>	
-	
+	</property>
+
 	<property>
 		<name>xasecure.audit.destination.solr.zookeepers</name>
 		<value></value>
-	</property>	
-	
+	</property>
+
 	<property>
 		<name>xasecure.audit.destination.solr.collection</name>
 		<value>NONE</value>
-	</property>	
-	
-	
+	</property>
+
+
 	<!-- HDFS audit provider configuration -->
 	<property>
 		<name>xasecure.audit.destination.hdfs</name>
 		<value>false</value>
-	</property>	
+	</property>
 
 	<property>
 		<name>xasecure.audit.destination.hdfs.dir</name>
 		<value>NONE</value>
-	</property>	
-	
+	</property>
+
 	<property>
 		<name>xasecure.audit.destination.hdfs.subdir</name>
 		<value>%app-type%/%time:yyyyMMdd%</value>
-	</property>	
-	
+	</property>
+
 	<property>
 		<name>xasecure.audit.destination.hdfs.filename.format</name>
 		<value>%app-type%_ranger_audit_%hostname%.log</value>
-	</property>	
-	
+	</property>
+
 	<property>
 		<name>xasecure.audit.destination.hdfs.file.rollover.sec</name>
 		<value>86400</value>
-	</property>	
+	</property>
 
 	<!-- Audit to HDFS on Azure Datastore (WASB) requires v3 style settings.  Comment the above and uncomment only the
 	following to audit to Azure Blob Datastore via hdfs' WASB schema.
@@ -112,11 +112,11 @@
 	<property>
 		<name>xasecure.audit.destination.log4j</name>
 		<value>false</value>
-	</property>	
+	</property>
 
 	<property>
 		<name>xasecure.audit.destination.log4j.logger</name>
 		<value></value>
-	</property>	
-	
+	</property>
+
 </configuration>

@@ -209,7 +209,10 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
 
                 try {
 
+                    log.info("acceptorPrincipal : " + acceptorPrincipal);
+                    log.info("acceptorKeyTabPath : " + acceptorKeyTabPath);
                     final Subject subject = JaasKrbUtil.loginUsingKeytab(acceptorPrincipal, acceptorKeyTabPath, false);
+                    //log.info("subject : " + subject);
 
                     final GSSManager manager = GSSManager.getInstance();
                     final int credentialLifetime = GSSCredential.INDEFINITE_LIFETIME;
@@ -222,6 +225,7 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                     };
                     gssContext = manager.createContext(Subject.doAs(subject, action));
 
+                    //log.info("gssContext : " + gssContext);
                     outToken = Subject.doAs(subject, new AcceptAction(gssContext, decodedNegotiateHeader));
 
                     if (outToken == null) {
@@ -238,6 +242,13 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                     log.error("Ticket validation not successful due to", e);
                     return null;
                 } catch (final PrivilegedActionException e) {
+                    log.error("Caught exception in extractCredentials0. Please investigate: "
+                            + e
+                            + Arrays.asList(e.getStackTrace())
+                            .stream()
+                            .map(Objects::toString)
+                            .collect(Collectors.joining("\n"))
+                    );
                     final Throwable cause = e.getCause();
                     if (cause instanceof GSSException) {
                         log.info("Service login not successful due to", e);
