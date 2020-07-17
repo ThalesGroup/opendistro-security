@@ -1,6 +1,5 @@
 package com.amazon.opendistroforelasticsearch.security.privileges;
 
-import com.amazon.dlic.auth.http.kerberos.HTTPSpnegoAuthenticator;
 import com.amazon.opendistroforelasticsearch.security.OpenDistroSecurityPlugin;
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.configuration.ActionGroupHolder;
@@ -16,7 +15,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.authentication.util.auth_to_name.KrbAuthToNameWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.ranger.audit.provider.MiscUtil;
@@ -49,7 +47,6 @@ import org.elasticsearch.cluster.metadata.MetaData;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -64,7 +61,6 @@ import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -174,14 +170,6 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         usrGrpCache = new UserGroupMappingCache();
         usrGrpCache.init();
 
-        if (Strings.isNullOrEmpty(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH))) {
-            log.warn("auth_to_local_file_path is empty, principal names will not be shortened");
-        }
-        try {
-            KrbAuthToNameWrapper.init(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH), true);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         log.info("RangerPrivilegesEvaluator successfully initialized");
         isInitialised = true;
     }
@@ -306,10 +294,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         }
 
         String keytabPrincipal = settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_PRINCIPAL);
-        String keytabPath = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH,
-                HTTPSpnegoAuthenticator.SERVER_KEYTAB_PATH));
-        String krbConf = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_KRB5_FILEPATH,
-                HTTPSpnegoAuthenticator.KRB5_CONF));
+        String keytabPath = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH));
+        String krbConf = "/etc/elasticsearch/".concat(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_KRB5_FILEPATH));
         String hadoopHomeDir = settings.get(ConfigConstants.OPENDISTRO_HADOOP_HOME_DIR);
         String coreSiteXmlPath = settings.get(ConfigConstants.OPENDISTRO_HADOOP_CORE_SITE_XML);
         String hdfsSiteXmlPath = settings.get(ConfigConstants.OPENDISTRO_HADOOP_HDFS_SITE_XML);
@@ -820,7 +806,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     }
 
     @Override
-    public EvaluatorResponse evaluate(User user1, String action, ActionRequest request, Task task) {
+    public EvaluatorResponse evaluate(User user, String action, ActionRequest request, Task task) {
         if (!isInitialized()) {
             throw new ElasticsearchSecurityException("Open Distro is not initialized.");
         }
@@ -828,17 +814,6 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         if(action.startsWith("internal:indices/admin/upgrade")) {
             action = "indices:admin/upgrade";
         }
-
-        log.debug ("username : " + user1.getName());
-
-        User user = user1;
-        try {
-            user = new User(KrbAuthToNameWrapper.getName(user1.getName()), user1.getRoles(), null);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        log.info ("evaluate privileges on username : " + user.getName());
 
         final TransportAddress caller = Objects.requireNonNull((TransportAddress) this.threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_REMOTE_ADDRESS));
 
@@ -888,7 +863,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -916,7 +892,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
             presponse.allowed = allowAction;
 
             if (!allowAction) {
-                log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                presponse.missingPrivileges.add(action);
+                log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
             }
 
             return presponse;
@@ -935,7 +912,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -959,7 +937,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -977,7 +956,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -995,7 +975,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -1013,7 +994,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -1031,7 +1013,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                     presponse.allowed = allowAction;
 
                     if (!allowAction) {
-                        log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                        presponse.missingPrivileges.add(action);
+                        log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                     }
 
                     return presponse;
@@ -1046,7 +1029,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
                 presponse.allowed = allowAction;
 
                 if (!allowAction) {
-                    log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+                    presponse.missingPrivileges.add(action);
+                    log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
                 }
 
                 return presponse;
@@ -1115,7 +1099,8 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         }
 
         if (!allowAction) {
-            log.info("Permission denied for User: " + user.getName() + "Action: " + action + " , indices: " + String.join(",", indices));
+            presponse.missingPrivileges.add(action);
+            log.info("Permission denied for User: " + user.getName() + " Action: " + action + " , indices: " + String.join(",", indices));
         }
         presponse.allowed = allowAction;
         return presponse;

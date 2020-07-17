@@ -15,6 +15,7 @@
 
 package com.amazon.dlic.auth.http.kerberos;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +32,9 @@ import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
+import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.kerb4j.client.SpnegoClient;
+import org.apache.hadoop.security.authentication.util.auth_to_name.KrbAuthToNameWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -58,22 +61,18 @@ import com.amazon.dlic.auth.http.kerberos.util.KrbConstants;
 import com.amazon.opendistroforelasticsearch.security.auth.HTTPAuthenticator;
 import com.amazon.opendistroforelasticsearch.security.user.AuthCredentials;
 import com.google.common.base.Strings;
-import sun.security.krb5.KrbException;
 
 public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
 
     protected static Logger logger = LogManager.getLogger(HTTPSpnegoAuthenticator.class);
     private static final String EMPTY_STRING = "";
     private static final Oid[] KRB_OIDS = new Oid[] {KrbConstants.SPNEGO, KrbConstants.KRB5MECH};
-    public final static String SERVER_KEYTAB_PATH = "/etc/security/keytabs/es.service.keytab";
-    public final static String KRB5_CONF = "/etc/krb5.conf";
 
     protected final Logger log = LogManager.getLogger(this.getClass());
 
     private boolean stripRealmFromPrincipalName;
     private Set<String> acceptorPrincipal;
     private Path acceptorKeyTabPath;
-    private static SpnegoClient spnegoClient = null;
 
     public HTTPSpnegoAuthenticator(final Settings settings, final Path configPath) {
         super();
@@ -161,6 +160,16 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             log.debug("acceptor_principal {}", acceptorPrincipal);
             log.debug("acceptor_keytab_filepath {}", acceptorKeyTabPath);
 
+            if (Strings.isNullOrEmpty(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH))) {
+                log.warn("auth_to_local_file_path is empty, principal names will not be shortened");
+            } else {
+                try {
+                    KrbAuthToNameWrapper.init(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH), true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
         } catch (Throwable e) {
             log.error("Cannot construct HTTPSpnegoAuthenticator due to {}", e.getMessage(), e);
             log.error("Please make sure you configured 'opendistro_security.kerberos.acceptor_keytab_filepath' realtive to the ES config/ dir!");
@@ -208,11 +217,7 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                 byte[] outToken = null;
 
                 try {
-
-                    log.info("acceptorPrincipal : " + acceptorPrincipal);
-                    log.info("acceptorKeyTabPath : " + acceptorKeyTabPath);
                     final Subject subject = JaasKrbUtil.loginUsingKeytab(acceptorPrincipal, acceptorKeyTabPath, false);
-                    //log.info("subject : " + subject);
 
                     final GSSManager manager = GSSManager.getInstance();
                     final int credentialLifetime = GSSCredential.INDEFINITE_LIFETIME;
@@ -224,8 +229,6 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                         }
                     };
                     gssContext = manager.createContext(Subject.doAs(subject, action));
-
-                    //log.info("gssContext : " + gssContext);
                     outToken = Subject.doAs(subject, new AcceptAction(gssContext, decodedNegotiateHeader));
 
                     if (outToken == null) {
@@ -270,8 +273,13 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                     return new AuthCredentials("_incomplete_", (Object) outToken);
                 }
 
-
-                final String username = ((SimpleUserPrincipal) principal).getName();
+                String username = "";
+                try {
+                    username = KrbAuthToNameWrapper.getName(((SimpleUserPrincipal) principal).getName());
+                    log.info ("username : " + username + " will be used for " + ((SimpleUserPrincipal) principal).getName());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
                 if(username == null || username.length() == 0) {
                     log.error("Got empty or null user from kerberos. Normally this means that you acceptor principal {} does not match the server hostname", acceptorPrincipal);
@@ -462,43 +470,4 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             return buffer.toString();
         }
     }
-
-    public static void initSpnegoClient(String svcName, String keytabPath, String krbConf) throws KrbException {
-        if (spnegoClient != null) {
-            return;
-        }
-
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SpecialPermission());
-        }
-
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-                try {
-                    System.setProperty("java.security.krb5.conf", krbConf);
-                    sun.security.krb5.Config.refresh();
-                    logger.debug("login with keytab");
-                    spnegoClient = SpnegoClient.loginWithKeyTab(svcName, keytabPath);
-                    logger.debug("login with keytab successful");
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    logger.debug("Caught exception while initSpnegoClient. Please investigate: "
-                            + e
-                            + Arrays.asList(e.getStackTrace())
-                            .stream()
-                            .map(Objects::toString)
-                            .collect(Collectors.joining("\n"))
-                    );
-                }
-                return null;
-            }
-        });
-
-    }
-
-    public static SpnegoClient getSpnegoClient() {
-        return spnegoClient;
-    }
-
 }
