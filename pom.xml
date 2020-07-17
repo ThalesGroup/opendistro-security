@@ -129,6 +129,12 @@
         </dependency>
 
         <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>apache-hadoop-kerberos-util</artifactId>
+        <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.ranger</groupId>
             <artifactId>ranger-plugins-common</artifactId>
             <version>1.2.0</version>

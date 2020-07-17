@@ -240,6 +240,7 @@ public class ConfigConstants {
     public static final String OPENDISTRO_HADOOP_HOME_DIR = "opendistro_security.hadoop.home_dir";
     public static final String OPENDISTRO_HADOOP_CORE_SITE_XML = "opendistro_security.hadoop.core_site_xml_path";
     public static final String OPENDISTRO_HADOOP_HDFS_SITE_XML = "opendistro_security.hadoop.hdfs_site_xml_path";
+    public static final String OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH = "opendistro_security.kerberos.auth_to_local_file_path";
 
     public enum RolesMappingResolution {
         MAPPING_ONLY,

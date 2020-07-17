@@ -16,6 +16,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Sets;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.authentication.util.auth_to_name.KrbAuthToNameWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.ranger.audit.provider.MiscUtil;
@@ -63,6 +64,7 @@ import sun.security.krb5.Config;
 import sun.security.krb5.KrbException;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -172,6 +174,14 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         usrGrpCache = new UserGroupMappingCache();
         usrGrpCache.init();
 
+        if (Strings.isNullOrEmpty(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH))) {
+            log.warn("auth_to_local_file_path is empty, principal names will not be shortened");
+        }
+        try {
+            KrbAuthToNameWrapper.init(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH), true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         log.info("RangerPrivilegesEvaluator successfully initialized");
         isInitialised = true;
     }
@@ -810,7 +820,7 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
     }
 
     @Override
-    public EvaluatorResponse evaluate(User user, String action, ActionRequest request, Task task) {
+    public EvaluatorResponse evaluate(User user1, String action, ActionRequest request, Task task) {
         if (!isInitialized()) {
             throw new ElasticsearchSecurityException("Open Distro is not initialized.");
         }
@@ -818,6 +828,17 @@ public class RangerPrivilegesEvaluator extends AbstractEvaluator {
         if(action.startsWith("internal:indices/admin/upgrade")) {
             action = "indices:admin/upgrade";
         }
+
+        log.debug ("username : " + user1.getName());
+
+        User user = user1;
+        try {
+            user = new User(KrbAuthToNameWrapper.getName(user1.getName()), user1.getRoles(), null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        log.info ("evaluate privileges on username : " + user.getName());
 
         final TransportAddress caller = Objects.requireNonNull((TransportAddress) this.threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_REMOTE_ADDRESS));
 
