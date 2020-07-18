@@ -782,28 +782,14 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         adminDns = new AdminDNs(settings);
         //final PrincipalExtractor pe = new DefaultPrincipalExtractor();
-        //final boolean isDefaultEvaluator = settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR).equals("com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator");
-
-        final boolean isDefaultEvaluator = true;
-        if (isDefaultEvaluator) {
-            cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig, true);
-            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, irr);
-        } else {
-            cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig, false);
-        }
+        cr = (IndexBaseConfigurationRepository) IndexBaseConfigurationRepository.create(settings, this.configPath, threadPool, localClient, clusterService, auditLog, complianceConfig, true);
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, irr);
         final InternalAuthenticationBackend iab = new InternalAuthenticationBackend(cr);
         final XFFResolver xffResolver = new XFFResolver(threadPool);
-        if (isDefaultEvaluator) {
-            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, xffResolver);
-        }
-        log.info("BackendRegistry call here");
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, xffResolver);
         backendRegistry = new BackendRegistry(settings, configPath, adminDns, xffResolver, iab, auditLog, threadPool);
-        if (isDefaultEvaluator) {
-            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
-        }
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
-        log.info("OpenDistroSecurityPlugin settings : " + settings);
-        // more like es settings
 
         log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
 
@@ -840,13 +826,9 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         log.debug("evaluator initialized");
 
-        // evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
-        
         final CompatConfig compatConfig = new CompatConfig(environment);
 
-        if (isDefaultEvaluator) {
-            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig); // subscribeOnChange (config, roles, rolesmapping, internalusers, actiongroups) only in the case of default evaluator
-        }
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
 
         odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
@@ -862,15 +844,13 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
                 interClusterRequestEvaluator, cs, Objects.requireNonNull(sslExceptionHandler), Objects.requireNonNull(cih));
         components.add(principalExtractor);
 
-        if (isDefaultEvaluator) {
-            cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, new ConfigurationChangeListener() {
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, new ConfigurationChangeListener() {
 
-                @Override
-                public void onChange(Settings unused) {
-                    //auditLog.logExternalConfig(settings, environment);
-                }
-            });
-        }
+            @Override
+            public void onChange(Settings unused) {
+                //auditLog.logExternalConfig(settings, environment);
+            }
+        });
 
         // NOTE: We need to create DefaultInterClusterRequestEvaluator before creating ConfigurationRepository since the latter requires security index to be accessible which means
         // communication with other nodes is already up. However for the communication to be up, there needs to be trusted nodes_dn. Hence the base values from elasticsearch.yml
@@ -891,9 +871,6 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         components.add(odsi);
 
         securityRestHandler = new OpenDistroSecurityRestFilter(backendRegistry, auditLog, threadPool, principalExtractor, settings, configPath, compatConfig);
-
-        log.debug("createComponents done");
-
         return components;
 
     }

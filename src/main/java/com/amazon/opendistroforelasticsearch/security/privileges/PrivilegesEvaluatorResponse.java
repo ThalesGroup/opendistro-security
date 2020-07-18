@@ -66,7 +66,7 @@ public class PrivilegesEvaluatorResponse implements EvaluatorResponse {
     public Map<String,Set<String>> getQueries() {
         return queries;
     }
-    
+
     public PrivilegesEvaluatorResponse markComplete() {
         this.state = PrivilegesEvaluatorResponseState.COMPLETE;
         return this;
@@ -90,10 +90,10 @@ public class PrivilegesEvaluatorResponse implements EvaluatorResponse {
         return "PrivEvalResponse [allowed=" + allowed + ", missingPrivileges=" + missingPrivileges
                 + ", allowedFlsFields=" + allowedFlsFields + ", maskedFields=" + maskedFields + ", queries=" + queries + "]";
     }
-    
+
     public static enum PrivilegesEvaluatorResponseState {
         PENDING,
         COMPLETE;
     }
-    
+
 }

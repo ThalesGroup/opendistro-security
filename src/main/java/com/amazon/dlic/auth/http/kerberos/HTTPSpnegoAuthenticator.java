@@ -33,7 +33,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
-import com.kerb4j.client.SpnegoClient;
 import org.apache.hadoop.security.authentication.util.auth_to_name.KrbAuthToNameWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
