@@ -33,7 +33,14 @@ package com.amazon.opendistroforelasticsearch.security.configuration;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -95,7 +102,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
     private ThreadPool threadPool;
 
     private IndexBaseConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool,
-            Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig, boolean isDefaultEvaluator) {
+            Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
         this.opendistrosecurityIndex = settings.get(ConfigConstants.OPENDISTRO_SECURITY_CONFIG_INDEX_NAME, ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CONFIG_INDEX);
         this.settings = settings;
         this.client = client;
@@ -276,8 +283,8 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
     }
 
 
-    public static ConfigurationRepository create(Settings settings, final Path configPath, final ThreadPool threadPool, Client client,  ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig, boolean isDefaultEvaluator) {
-        final IndexBaseConfigurationRepository repository = new IndexBaseConfigurationRepository(settings, configPath, threadPool, client, clusterService, auditLog, complianceConfig, isDefaultEvaluator);
+    public static ConfigurationRepository create(Settings settings, final Path configPath, final ThreadPool threadPool, Client client,  ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
+        final IndexBaseConfigurationRepository repository = new IndexBaseConfigurationRepository(settings, configPath, threadPool, client, clusterService, auditLog, complianceConfig);
         return repository;
     }
 

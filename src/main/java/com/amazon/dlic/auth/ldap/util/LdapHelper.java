@@ -15,33 +15,18 @@
 
 package com.amazon.dlic.auth.ldap.util;
 
+import org.elasticsearch.SpecialPermission;
+import org.ldaptive.*;
+import org.ldaptive.referral.SearchReferralHandler;
+
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
-
-import javax.naming.Context;
-import javax.naming.InvalidNameException;
-import javax.naming.NamingEnumeration;
-import javax.naming.directory.*;
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
-
-import joptsimple.internal.Strings;
-import org.elasticsearch.SpecialPermission;
-import org.elasticsearch.common.settings.Settings;
-import org.ldaptive.Connection;
-import org.ldaptive.DerefAliases;
-import org.ldaptive.LdapEntry;
-import org.ldaptive.LdapException;
-import org.ldaptive.Response;
-import org.ldaptive.ReturnAttributes;
-import org.ldaptive.SearchFilter;
-import org.ldaptive.SearchOperation;
-import org.ldaptive.SearchRequest;
-import org.ldaptive.SearchResult;
-import org.ldaptive.SearchScope;
-import org.ldaptive.referral.SearchReferralHandler;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LdapHelper {
 

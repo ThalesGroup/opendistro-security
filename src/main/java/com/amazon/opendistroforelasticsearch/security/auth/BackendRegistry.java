@@ -199,10 +199,6 @@ public class BackendRegistry implements ConfigurationChangeListener {
         this.auditLog = auditLog;
         this.threadPool = threadPool;
         this.userInjector = new UserInjector(settings, threadPool, auditLog, xffResolver);
-
-        log.debug("esSettings: " + esSettings);
-        log.debug("configPath: " + configPath);
-        
         authImplMap.put("intern_c", InternalAuthenticationBackend.class.getName());
         authImplMap.put("intern_z", NoOpAuthorizationBackend.class.getName());
 
@@ -375,9 +371,6 @@ public class BackendRegistry implements ConfigurationChangeListener {
         authBackendFailureListeners = Multimaps.unmodifiableMultimap(authBackendFailureListeners0);
 
         //Open Distro Security no default authc
-        log.debug("restAuthDomains.isEmpty() : " + restAuthDomains.isEmpty());
-        log.debug("anonymousAuthEnabled : " + anonymousAuthEnabled);
-        log.debug("injectedUserEnabled : " + injectedUserEnabled);
         initialized = !restAuthDomains.isEmpty() || anonymousAuthEnabled || injectedUserEnabled;
 
         if(originalDestroyableComponents != null) {
@@ -385,9 +378,6 @@ public class BackendRegistry implements ConfigurationChangeListener {
         }
 
         originalDestroyableComponents = null;
-
-        log.info("configs updated");
-
     }
 
     private void createAuthFailureListeners(Map<String, Settings> authFailureListenerSettings, List<AuthFailureListener> ipAuthFailureListeners,
@@ -552,10 +542,6 @@ public class BackendRegistry implements ConfigurationChangeListener {
      * @throws ElasticsearchSecurityException
      */
     public boolean authenticate(final RestRequest request, final RestChannel channel, final ThreadContext threadContext) {
-
-        log.debug("request parameter in authenticate : " + request);
-        log.debug("channel parameter in authenticate : " + channel);
-        log.debug("threadContext parameter in authenticate : " + threadContext);
 
         if (request.getRemoteAddress() instanceof InetSocketAddress && isBlocked(((InetSocketAddress) request.getRemoteAddress()).getAddress())) {
             if (log.isDebugEnabled()) {
