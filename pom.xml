@@ -35,7 +35,7 @@
     <groupId>com.amazon.opendistroforelasticsearch</groupId>
     <artifactId>opendistro_security</artifactId>
     <packaging>jar</packaging>
-    <version>0.10.1.2-SNAPSHOT</version>
+    <version>4.2.0-1-6.8.0-0.10.1.2</version>
     <name>Open Distro Security for Elasticsearch</name>
     <description>Open Distro For Elasticsearch Security</description>
     <url>https://github.com/opendistro-for-elasticsearch/security</url>
