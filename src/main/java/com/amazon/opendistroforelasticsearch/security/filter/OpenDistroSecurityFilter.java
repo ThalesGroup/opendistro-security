@@ -269,7 +269,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 auditLog.logMissingPrivileges(action, request, task);
                 log.debug("no permissions for {}", pres.getMissingPrivileges());
 
-                listener.onFailure(new ElasticsearchSecurityException("no " + pres.getMissingPrivileges() +" permissions for "+user, RestStatus.FORBIDDEN));
+                listener.onFailure(new ElasticsearchSecurityException("no permissions for " + pres.getMissingPrivileges() +" permissions for "+user, RestStatus.FORBIDDEN));
                 return;
             }
         } catch (Throwable e) {
