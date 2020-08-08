@@ -250,7 +250,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 log.trace("Evaluate permissions for user: {}", user.getName());
             }
 
-            log.info("Evaluate permissions for user: {}", user.getName());
+            log.debug("Evaluate permissions for user: {}", user.getName());
 
             final EvaluatorResponse pres = eval.evaluate(user, action, request, task);
             

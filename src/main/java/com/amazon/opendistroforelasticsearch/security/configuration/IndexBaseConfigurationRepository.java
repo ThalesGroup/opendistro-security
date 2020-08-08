@@ -197,13 +197,6 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                                     break;
                                 } catch (Exception e) {
                                     LOGGER.debug("Unable to load configuration due to {}", String.valueOf(ExceptionUtils.getRootCause(e)));
-                                    LOGGER.error("Caught exception in load config . Please investigate: "
-                                            + e
-                                            + Arrays.asList(e.getStackTrace())
-                                            .stream()
-                                            .map(Objects::toString)
-                                            .collect(Collectors.joining("\n"))
-                                    );
                                     try {
                                         Thread.sleep(3000);
                                     } catch (InterruptedException e1) {
@@ -403,13 +396,6 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                 retVal.putAll(validate(cl.load(configTypes.toArray(new String[0]), 30, TimeUnit.SECONDS), configTypes));
             }
         } catch (Exception e) {
-            LOGGER.error("Caught exception in loadConfigurations. Please investigate: "
-                    + e
-                    + Arrays.asList(e.getStackTrace())
-                    .stream()
-                    .map(Objects::toString)
-                    .collect(Collectors.joining("\n"))
-            );
             throw new ElasticsearchException(e);
         }
 

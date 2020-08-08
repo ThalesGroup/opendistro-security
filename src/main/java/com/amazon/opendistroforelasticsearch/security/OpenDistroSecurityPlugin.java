@@ -773,37 +773,18 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
 
-        log.info("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
+        log.debug("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
 
         try {
             evaluator = (Evaluator) GetEvaluatorFactory.getEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
-        } catch (ClassNotFoundException | InstantiationException | InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-            try {
-                throw e;
-            } catch (ClassNotFoundException ex) {
-                log.debug("ClassNotFoundException");
-                ex.printStackTrace();
-            } catch (NoSuchMethodException ex) {
-                log.debug("NoSuchMethodException");
-                ex.printStackTrace();
-            } catch (IllegalAccessException ex) {
-                log.debug("IllegalAccessException");
-                ex.printStackTrace();
-            } catch (InvocationTargetException ex) {
-                log.debug("InvocationTargetException");
-                log.debug("cause : " + ex.getCause());
-                ex.printStackTrace();
-                log.error("Caught exception while GetEvaluatorFactory.getEvaluator() . Please investigate: "
-                        + ex
-                        + Arrays.asList(ex.getStackTrace())
-                        .stream()
-                        .map(Objects::toString)
-                        .collect(Collectors.joining("\n"))
-                );
-            } catch (InstantiationException ex) {
-                log.debug("InstantiationException");
-                ex.printStackTrace();
-            }
+        } catch (Throwable e) {
+            log.error("Caught exception while initializing privileges evaluator . Please investigate: "
+                    + e.getCause()
+                    + Arrays.asList(e.getStackTrace())
+                    .stream()
+                    .map(Objects::toString)
+                    .collect(Collectors.joining("\n"))
+            );
         }
 
         log.debug("evaluator initialized");
