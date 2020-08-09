@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -62,7 +62,6 @@ import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseCon
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator.ErrorType;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
@@ -82,7 +81,7 @@ public abstract class AbstractApiAction extends BaseRestHandler {
 
 	protected AbstractApiAction(final Settings settings, final Path configPath, final RestController controller,
 								final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl,
-								final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator evaluator,
+								final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator,
 								ThreadPool threadPool, AuditLog auditLog) {
 		super(settings);
 		this.settings = settings;
@@ -92,7 +91,7 @@ public abstract class AbstractApiAction extends BaseRestHandler {
 		this.cl = cl;
 		this.cs = cs;
 		this.threadPool = threadPool;
-		this.restApiPrivilegesEvaluator = new RestApiPrivilegesEvaluator(settings, adminDNs, evaluator,
+		this.restApiPrivilegesEvaluator = new RestApiPrivilegesEvaluator(settings, adminDNs, privilegesEvaluator,
 				principalExtractor, configPath, threadPool);
 		this.auditLog = auditLog;
 		this.registerHandlers(controller, settings);

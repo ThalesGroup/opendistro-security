@@ -61,8 +61,8 @@ public class SnapshotRestoreEvaluator {
         this.auditLog = auditLog;
     }
 
-    public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final ClusterInfoHolder clusterInfoHolder,
-            final PrivilegesEvaluatorResponse presponse) {
+    public OpenDistroPrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final ClusterInfoHolder clusterInfoHolder,
+                                                          final OpenDistroPrivilegesEvaluatorResponse presponse) {
 
         if (!(request instanceof RestoreSnapshotRequest)) {
             return presponse;

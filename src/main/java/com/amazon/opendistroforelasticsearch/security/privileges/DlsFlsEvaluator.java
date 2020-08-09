@@ -49,7 +49,6 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.amazon.opendistroforelasticsearch.security.OpenDistroSecurityPlugin;
 import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer.Resolved;
 import com.amazon.opendistroforelasticsearch.security.securityconf.ConfigModel.SecurityRoles;
 import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
@@ -68,8 +67,8 @@ public class DlsFlsEvaluator {
         this.threadPool = threadPool;
     }
 
-    public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final ClusterService clusterService, final IndexNameExpressionResolver resolver, final Resolved requestedResolved, final User user,
-                                                final SecurityRoles securityRoles, final PrivilegesEvaluatorResponse presponse) {
+    public OpenDistroPrivilegesEvaluatorResponse evaluate(final ActionRequest request, final ClusterService clusterService, final IndexNameExpressionResolver resolver, final Resolved requestedResolved, final User user,
+                                                          final SecurityRoles securityRoles, final OpenDistroPrivilegesEvaluatorResponse presponse) {
 
         ThreadContext threadContext = threadPool.getThreadContext();
 

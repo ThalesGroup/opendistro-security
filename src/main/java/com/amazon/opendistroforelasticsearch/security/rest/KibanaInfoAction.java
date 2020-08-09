@@ -35,7 +35,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 
 import java.io.IOException;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -51,20 +51,19 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
 
 public class KibanaInfoAction extends BaseRestHandler {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final Evaluator evaluator;
+    private final PrivilegesEvaluator privilegesEvaluator;
     private final ThreadContext threadContext;
 
-    public KibanaInfoAction(final Settings settings, final RestController controller, final Evaluator evaluator, final ThreadPool threadPool) {
+    public KibanaInfoAction(final Settings settings, final RestController controller, final PrivilegesEvaluator privilegesEvaluator, final ThreadPool threadPool) {
         super(settings);
         this.threadContext = threadPool.getThreadContext();
-        this.evaluator = evaluator;
+        this.privilegesEvaluator = privilegesEvaluator;
         controller.registerHandler(GET, "/_opendistro/_security/kibanainfo", this);
         controller.registerHandler(POST, "/_opendistro/_security/kibanainfo", this);
     }
@@ -85,10 +84,10 @@ public class KibanaInfoAction extends BaseRestHandler {
 
                     builder.startObject();
                     builder.field("user_name", user==null?null:user.getName());
-                    builder.field("not_fail_on_forbidden_enabled", evaluator.notFailOnForbiddenEnabled());
-                    builder.field("kibana_mt_enabled", evaluator.multitenancyEnabled());
-                    builder.field("kibana_index", evaluator.kibanaIndex());
-                    builder.field("kibana_server_user", evaluator.kibanaServerUsername());
+                    builder.field("not_fail_on_forbidden_enabled", privilegesEvaluator.notFailOnForbiddenEnabled());
+                    builder.field("kibana_mt_enabled", privilegesEvaluator.multitenancyEnabled());
+                    builder.field("kibana_index", privilegesEvaluator.kibanaIndex());
+                    builder.field("kibana_server_user", privilegesEvaluator.kibanaServerUsername());
                     //builder.field("kibana_index_readonly", evaluator.kibanaIndexReadonly(user, remoteAddress));
                     builder.endObject();
 

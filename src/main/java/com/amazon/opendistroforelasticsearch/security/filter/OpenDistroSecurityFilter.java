@@ -37,8 +37,8 @@ import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfi
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
 import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
-import com.amazon.opendistroforelasticsearch.security.privileges.EvaluatorResponse;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluatorResponse;
 import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
@@ -83,7 +83,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     protected final Logger actionTrace = LogManager.getLogger("opendistro_security_action_trace");
-    private final Evaluator evalp;
+    private final PrivilegesEvaluator evalp;
     private final AdminDNs adminDns;
     private DlsFlsRequestValve dlsFlsValve;
     private final AuditLog auditLog;
@@ -92,9 +92,9 @@ public class OpenDistroSecurityFilter implements ActionFilter {
     private final ComplianceConfig complianceConfig;
     private final CompatConfig compatConfig;
 
-    public OpenDistroSecurityFilter(final Evaluator evalp, final AdminDNs adminDns,
-            DlsFlsRequestValve dlsFlsValve, AuditLog auditLog, ThreadPool threadPool, ClusterService cs,
-            ComplianceConfig complianceConfig, final CompatConfig compatConfig) {
+    public OpenDistroSecurityFilter(final PrivilegesEvaluator evalp, final AdminDNs adminDns,
+                                    DlsFlsRequestValve dlsFlsValve, AuditLog auditLog, ThreadPool threadPool, ClusterService cs,
+                                    ComplianceConfig complianceConfig, final CompatConfig compatConfig) {
         this.evalp = evalp;
         this.adminDns = adminDns;
         this.dlsFlsValve = dlsFlsValve;
@@ -237,7 +237,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 return;
             }
 
-            final Evaluator eval = evalp;
+            final PrivilegesEvaluator eval = evalp;
 
             if (!eval.isInitialized()) {
                 log.error("Open Distro Security not initialized for {}", action);
@@ -252,7 +252,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
 
             log.debug("Evaluate permissions for user: {}", user.getName());
 
-            final EvaluatorResponse pres = eval.evaluate(user, action, request, task);
+            final PrivilegesEvaluatorResponse pres = eval.evaluate(user, action, request, task);
             
             if (log.isDebugEnabled()) {
                 log.debug(pres);

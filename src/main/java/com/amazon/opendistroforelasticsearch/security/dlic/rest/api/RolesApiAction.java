@@ -17,7 +17,7 @@ package com.amazon.opendistroforelasticsearch.security.dlic.rest.api;
 
 import java.nio.file.Path;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesReference;
@@ -33,7 +33,6 @@ import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.RolesValidator;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 
@@ -41,8 +40,8 @@ public class RolesApiAction extends PatchableResourceApiAction {
 
 	@Inject
 	public RolesApiAction(Settings settings, final Path configPath, RestController controller, Client client, AdminDNs adminDNs, IndexBaseConfigurationRepository cl,
-						  ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
-		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool, auditLog);
+						  ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
+		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, privilegesEvaluator, threadPool, auditLog);
 	}
 
 	@Override

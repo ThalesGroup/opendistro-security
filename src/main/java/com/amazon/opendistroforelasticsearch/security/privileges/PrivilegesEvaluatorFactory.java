@@ -20,17 +20,17 @@ import java.lang.reflect.InvocationTargetException;
  * @author Divyansh Jain
  */
 
-public class GetEvaluatorFactory {
+public class PrivilegesEvaluatorFactory {
 
-    public static Object getEvaluator(ClusterService clusterService, ThreadPool threadPool,
-                                         IndexBaseConfigurationRepository cr, ActionGroupHolder ah,
-                                         IndexNameExpressionResolver resolver, AuditLog auditLog,
-                                         Settings settings, PrivilegesInterceptor privilegesInterceptor,
-                                         ClusterInfoHolder cih, IndexResolverReplacer irr,
-                                         boolean advancedModulesEnabled) throws ClassNotFoundException,
+    public static Object getPrivilegesEvaluator(ClusterService clusterService, ThreadPool threadPool,
+                                                IndexBaseConfigurationRepository cr, ActionGroupHolder ah,
+                                                IndexNameExpressionResolver resolver, AuditLog auditLog,
+                                                Settings settings, PrivilegesInterceptor privilegesInterceptor,
+                                                ClusterInfoHolder cih, IndexResolverReplacer irr,
+                                                boolean advancedModulesEnabled) throws ClassNotFoundException,
             NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
-        Class<?> clazz = Class.forName(settings.get(ConfigConstants.OPENDISTRO_SECURITY_EVALUATOR));
+        Class<?> clazz = Class.forName(settings.get(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR));
         Constructor<?> ctor = clazz.getConstructor(ClusterService.class, ThreadPool.class, ConfigurationRepository.class,
                 ActionGroupHolder.class, IndexNameExpressionResolver.class, AuditLog.class, Settings.class,
                 PrivilegesInterceptor.class, ClusterInfoHolder.class, IndexResolverReplacer.class, boolean.class);

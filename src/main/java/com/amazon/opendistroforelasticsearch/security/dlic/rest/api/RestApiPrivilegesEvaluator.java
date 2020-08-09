@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.settings.Settings;
@@ -40,7 +40,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.ssl.util.SSLRequestHelper;
 import com.amazon.opendistroforelasticsearch.security.ssl.util.SSLRequestHelper.SSLInfo;
@@ -53,7 +52,7 @@ public class RestApiPrivilegesEvaluator {
 	protected final Logger logger = LogManager.getLogger(this.getClass());
 
 	private final AdminDNs adminDNs;
-	private final Evaluator privilegesEvaluator;
+	private final PrivilegesEvaluator privilegesEvaluator;
 	private final PrincipalExtractor principalExtractor;
 	private final Path configPath;
 	private final ThreadPool threadPool;
@@ -77,7 +76,7 @@ public class RestApiPrivilegesEvaluator {
 
 	private final Boolean roleBasedAccessEnabled;
 
-	public RestApiPrivilegesEvaluator(Settings settings, AdminDNs adminDNs, Evaluator privilegesEvaluator, PrincipalExtractor principalExtractor, Path configPath,
+	public RestApiPrivilegesEvaluator(Settings settings, AdminDNs adminDNs, PrivilegesEvaluator privilegesEvaluator, PrincipalExtractor principalExtractor, Path configPath,
 									  ThreadPool threadPool) {
 
 		this.adminDNs = adminDNs;

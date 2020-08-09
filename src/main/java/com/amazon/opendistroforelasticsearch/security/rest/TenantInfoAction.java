@@ -36,7 +36,7 @@ import static org.elasticsearch.rest.RestRequest.Method.POST;
 import java.io.IOException;
 import java.util.SortedMap;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -54,23 +54,22 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
 
 public class TenantInfoAction extends BaseRestHandler {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final Evaluator evaluator;
+    private final PrivilegesEvaluator privilegesEvaluator;
     private final ThreadContext threadContext;
     private final ClusterService clusterService;
     private final AdminDNs adminDns;
 
-    public TenantInfoAction(final Settings settings, final RestController controller, 
-    		final Evaluator evaluator, final ThreadPool threadPool, final ClusterService clusterService, final AdminDNs adminDns) {
+    public TenantInfoAction(final Settings settings, final RestController controller,
+                            final PrivilegesEvaluator privilegesEvaluator, final ThreadPool threadPool, final ClusterService clusterService, final AdminDNs adminDns) {
         super(settings);
         this.threadContext = threadPool.getThreadContext();
-        this.evaluator = evaluator;
+        this.privilegesEvaluator = privilegesEvaluator;
         this.clusterService = clusterService;
         this.adminDns = adminDns;
         controller.registerHandler(GET, "/_opendistro/_security/tenantinfo", this);
@@ -92,7 +91,7 @@ public class TenantInfoAction extends BaseRestHandler {
                     
                     //only allowed for admins or the kibanaserveruser
                     if(user == null || 
-                    		(!user.getName().equals(evaluator.kibanaServerUsername()))
+                    		(!user.getName().equals(privilegesEvaluator.kibanaServerUsername()))
                     		 && !adminDns.isAdmin(user)) {
                         response = new BytesRestResponse(RestStatus.FORBIDDEN,"");
                     } else {
@@ -138,7 +137,7 @@ public class TenantInfoAction extends BaseRestHandler {
     	}
     	
     	
-    	if(!indexParts[0].equals(evaluator.kibanaIndex())) {
+    	if(!indexParts[0].equals(privilegesEvaluator.kibanaIndex())) {
     		return null;
     	}
     	
@@ -146,7 +145,7 @@ public class TenantInfoAction extends BaseRestHandler {
 			final int expectedHash = Integer.parseInt(indexParts[1]);
 			final String sanitizedName = indexParts[2];
 			
-			for(String tenant: evaluator.getAllConfiguredTenantNames()) {
+			for(String tenant: privilegesEvaluator.getAllConfiguredTenantNames()) {
 				if(tenant.hashCode() == expectedHash && sanitizedName.equals(tenant.toLowerCase().replaceAll("[^a-z0-9]+",""))) {
 					return tenant;
 				}

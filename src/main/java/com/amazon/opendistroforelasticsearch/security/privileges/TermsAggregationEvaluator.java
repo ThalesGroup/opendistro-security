@@ -66,7 +66,7 @@ public class TermsAggregationEvaluator {
     public TermsAggregationEvaluator() {
     }
     
-    public PrivilegesEvaluatorResponse evaluate(final Resolved resolved, final ActionRequest request, ClusterService clusterService, User user, SecurityRoles securityRoles,  IndexNameExpressionResolver resolver, PrivilegesEvaluatorResponse presponse) {
+    public OpenDistroPrivilegesEvaluatorResponse evaluate(final Resolved resolved, final ActionRequest request, ClusterService clusterService, User user, SecurityRoles securityRoles, IndexNameExpressionResolver resolver, OpenDistroPrivilegesEvaluatorResponse presponse) {
         try {
             
             if(request instanceof SearchRequest) {

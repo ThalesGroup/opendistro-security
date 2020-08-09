@@ -3,7 +3,6 @@ package com.amazon.opendistroforelasticsearch.security.privileges;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
@@ -48,8 +47,8 @@ public class OpenDistroProtectedIndexAccessEvaluator {
         this.deniedActionPatterns = indexDeniedActionPatterns.toArray(new String[0]);
     }
 
-    public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final IndexResolverReplacer.Resolved requestedResolved,
-                                                final PrivilegesEvaluatorResponse presponse, final SecurityRoles securityRoles) {
+    public OpenDistroPrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final IndexResolverReplacer.Resolved requestedResolved,
+                                                          final OpenDistroPrivilegesEvaluatorResponse presponse, final SecurityRoles securityRoles) {
         if (!protectedIndexEnabled) {
             return presponse;
         }

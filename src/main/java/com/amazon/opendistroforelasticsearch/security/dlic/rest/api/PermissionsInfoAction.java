@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -41,7 +41,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
@@ -53,11 +52,11 @@ public class PermissionsInfoAction extends BaseRestHandler {
 
 	private final RestApiPrivilegesEvaluator restApiPrivilegesEvaluator;
 	private final ThreadPool threadPool;
-	private final Evaluator privilegesEvaluator;
+	private final PrivilegesEvaluator privilegesEvaluator;
 
 	protected PermissionsInfoAction(final Settings settings, final Path configPath, final RestController controller, final Client client,
 									final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
-									final PrincipalExtractor principalExtractor, final Evaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
+									final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
 		super(settings);
 		controller.registerHandler(Method.GET, "/_opendistro/_security/api/permissionsinfo", this);
 		this.threadPool = threadPool;

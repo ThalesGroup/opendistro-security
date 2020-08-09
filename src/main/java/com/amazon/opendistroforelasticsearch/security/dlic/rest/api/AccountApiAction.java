@@ -17,18 +17,14 @@ package com.amazon.opendistroforelasticsearch.security.dlic.rest.api;
 
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.configuration.ConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AccountValidator;
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
@@ -61,13 +57,13 @@ import static com.amazon.opendistroforelasticsearch.security.dlic.rest.support.U
 public class AccountApiAction extends AbstractApiAction {
 
     private static final String RESOURCE_NAME = "account";
-    private final Evaluator privilegesEvaluator;
+    private final PrivilegesEvaluator privilegesEvaluator;
     private final ThreadContext threadContext;
     private final IndexBaseConfigurationRepository indexBaseConfigurationRepository;
 
     public AccountApiAction(final Settings settings, final Path configPath, final RestController controller,
                             final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository indexBaseConfigurationRepository,
-                            final ClusterService cs, final PrincipalExtractor principalExtractor, final Evaluator privilegesEvaluator,
+                            final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator,
                             ThreadPool threadPool, AuditLog auditLog) {
         super(settings, configPath, controller, client, adminDNs, indexBaseConfigurationRepository, cs, principalExtractor, privilegesEvaluator, threadPool,
                 auditLog);

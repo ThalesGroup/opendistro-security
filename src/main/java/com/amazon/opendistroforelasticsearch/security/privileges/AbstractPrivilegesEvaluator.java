@@ -28,7 +28,7 @@ import java.util.concurrent.*;
  * @author Divyansh Jain
  */
 
-public abstract class AbstractEvaluator implements Evaluator {
+public abstract class AbstractPrivilegesEvaluator implements PrivilegesEvaluator {
 
     protected final Logger log = LogManager.getLogger(this.getClass());
     private final ConfigurationRepository configurationRepository;
@@ -37,7 +37,7 @@ public abstract class AbstractEvaluator implements Evaluator {
     RoleMappingHolder roleMappingHolder = null;
     public TenantHolder tenantHolder = null;
 
-    protected AbstractEvaluator(ConfigurationRepository configurationRepository, PrivilegesInterceptor privilegesInterceptor) {
+    protected AbstractPrivilegesEvaluator(ConfigurationRepository configurationRepository, PrivilegesInterceptor privilegesInterceptor) {
         this.configurationRepository = configurationRepository;
         this.privilegesInterceptor = privilegesInterceptor;
     }

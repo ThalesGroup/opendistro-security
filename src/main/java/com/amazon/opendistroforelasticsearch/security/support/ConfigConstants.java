@@ -40,7 +40,7 @@ import java.util.Set;
 
 public class ConfigConstants {
 
-    public static final String OPENDISTRO_SECURITY_EVALUATOR = "opendistro_security.evaluator";
+    public static final String OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR = "opendistro_security.privileges_evaluator";
 
     public static final String OPENDISTRO_SECURITY_CONFIG_PREFIX = "_opendistro_security_";
 

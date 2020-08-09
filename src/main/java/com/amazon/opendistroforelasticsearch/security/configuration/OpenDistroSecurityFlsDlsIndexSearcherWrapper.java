@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.LongSupplier;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.search.IndexSearcher;
@@ -39,9 +38,6 @@ import org.elasticsearch.index.shard.ShardUtils;
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
 import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceIndexingOperationListener;
-import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.configuration.EmptyFilterLeafReader;
-import com.amazon.opendistroforelasticsearch.security.configuration.OpenDistroSecurityIndexSearcherWrapper;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
 import com.amazon.opendistroforelasticsearch.security.support.OpenDistroSecurityUtils;
@@ -59,8 +55,8 @@ public class OpenDistroSecurityFlsDlsIndexSearcherWrapper extends OpenDistroSecu
 
     public OpenDistroSecurityFlsDlsIndexSearcherWrapper(final IndexService indexService, final Settings settings,
             final AdminDNs adminDNs, final ClusterService clusterService, final AuditLog auditlog,
-            final ComplianceIndexingOperationListener ciol, final ComplianceConfig complianceConfig, final Evaluator evaluator) {
-        super(indexService, settings, adminDNs, evaluator);
+            final ComplianceIndexingOperationListener ciol, final ComplianceConfig complianceConfig, final PrivilegesEvaluator privilegesEvaluator) {
+        super(indexService, settings, adminDNs, privilegesEvaluator);
         ciol.setIs(indexService);
         this.clusterService = clusterService;
         this.indexService = indexService;

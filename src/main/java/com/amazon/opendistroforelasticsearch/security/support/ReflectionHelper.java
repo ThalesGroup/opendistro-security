@@ -41,7 +41,7 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.Evaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchException;
@@ -61,7 +61,6 @@ import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceIndex
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesInterceptor;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.DefaultPrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
@@ -107,7 +106,7 @@ public class ReflectionHelper {
     @SuppressWarnings("unchecked")
     public static Collection<RestHandler> instantiateMngtRestApiHandler(final Settings settings, final Path configPath, final RestController restController,
                                                                         final Client localClient, final AdminDNs adminDns, final IndexBaseConfigurationRepository cr, final ClusterService cs, final PrincipalExtractor principalExtractor,
-                                                                        final Evaluator evaluator, final ThreadPool threadPool, final AuditLog auditlog) {
+                                                                        final PrivilegesEvaluator privilegesEvaluator, final ThreadPool threadPool, final AuditLog auditlog) {
 
         if (advancedModulesDisabled()) {
             return Collections.emptyList();
@@ -117,8 +116,8 @@ public class ReflectionHelper {
             final Class<?> clazz = Class.forName("com.amazon.opendistroforelasticsearch.security.dlic.rest.api.OpenDistroSecurityRestApiActions");
             final Collection<RestHandler> ret = (Collection<RestHandler>) clazz
                     .getDeclaredMethod("getHandler", Settings.class, Path.class, RestController.class, Client.class, AdminDNs.class, IndexBaseConfigurationRepository.class,
-                            ClusterService.class, PrincipalExtractor.class, Evaluator.class, ThreadPool.class, AuditLog.class)
-                    .invoke(null, settings, configPath, restController, localClient, adminDns, cr, cs, principalExtractor, evaluator, threadPool, auditlog);
+                            ClusterService.class, PrincipalExtractor.class, PrivilegesEvaluator.class, ThreadPool.class, AuditLog.class)
+                    .invoke(null, settings, configPath, restController, localClient, adminDns, cr, cs, principalExtractor, privilegesEvaluator, threadPool, auditlog);
             addLoadedModule(clazz);
             return ret;
         } catch (final Throwable e) {
@@ -141,7 +140,7 @@ public class ReflectionHelper {
             final Class<?> clazz = Class.forName("com.amazon.opendistroforelasticsearch.security.configuration.OpenDistroSecurityFlsDlsIndexSearcherWrapper");
             final Constructor<?> ret = clazz.getConstructor(IndexService.class,
                     Settings.class, AdminDNs.class, ClusterService.class, AuditLog.class,
-                    ComplianceIndexingOperationListener.class, ComplianceConfig.class, Evaluator.class);
+                    ComplianceIndexingOperationListener.class, ComplianceConfig.class, PrivilegesEvaluator.class);
             addLoadedModule(clazz);
             return ret;
         } catch (final Throwable e) {
