@@ -233,6 +233,7 @@ public class ConfigConstants {
     public static final String OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED = "opendistro_security.ssl_cert_reload_enabled";
     public static final String OPENDISTRO_SECURITY_DISABLE_ENVVAR_REPLACEMENT = "opendistro_security.disable_envvar_replacement";
 
+    // RangerPrivilegesEvaluator configs
     public static final String OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH = "opendistro_security.kerberos.ugi_keytab_filepath";
     public static final String OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_PRINCIPAL = "opendistro_security.kerberos.ugi_keytab_principal";
     public static final String OPENDISTRO_AUTH_RANGER_SERVICE_TYPE = "opendistro_security.ranger.service_type";
