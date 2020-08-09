@@ -41,11 +41,10 @@ public class PrivilegesEvaluatorResponse {
     Map<String,Set<String>> maskedFields;
     Map<String,Set<String>> queries;
     PrivilegesEvaluatorResponseState state = PrivilegesEvaluatorResponseState.PENDING;
-
+    
     public boolean isAllowed() {
         return allowed;
     }
-
     public Set<String> getMissingPrivileges() {
         return new HashSet<String>(missingPrivileges);
     }
@@ -53,7 +52,7 @@ public class PrivilegesEvaluatorResponse {
     public Map<String,Set<String>> getAllowedFlsFields() {
         return allowedFlsFields;
     }
-
+    
     public Map<String,Set<String>> getMaskedFields() {
         return maskedFields;
     }
@@ -61,7 +60,7 @@ public class PrivilegesEvaluatorResponse {
     public Map<String,Set<String>> getQueries() {
         return queries;
     }
-
+    
     public PrivilegesEvaluatorResponse markComplete() {
         this.state = PrivilegesEvaluatorResponseState.COMPLETE;
         return this;
@@ -85,10 +84,10 @@ public class PrivilegesEvaluatorResponse {
         return "PrivEvalResponse [allowed=" + allowed + ", missingPrivileges=" + missingPrivileges
                 + ", allowedFlsFields=" + allowedFlsFields + ", maskedFields=" + maskedFields + ", queries=" + queries + "]";
     }
-
+    
     public static enum PrivilegesEvaluatorResponseState {
         PENDING,
         COMPLETE;
     }
-
+    
 }

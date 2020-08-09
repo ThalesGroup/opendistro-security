@@ -30,20 +30,9 @@
 
 package com.amazon.opendistroforelasticsearch.security.filter;
 
-import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
-import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
-import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
-import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluatorResponse;
-import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
-import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
-import com.amazon.opendistroforelasticsearch.security.support.SourceFieldsContext;
-import com.amazon.opendistroforelasticsearch.security.user.User;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ElasticsearchSecurityException;
@@ -76,8 +65,20 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
+import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
+import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
+import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
+import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluatorResponse;
+import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
+import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
+import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
+import com.amazon.opendistroforelasticsearch.security.support.SourceFieldsContext;
+import com.amazon.opendistroforelasticsearch.security.user.User;
 
 public class OpenDistroSecurityFilter implements ActionFilter {
 
@@ -93,8 +94,8 @@ public class OpenDistroSecurityFilter implements ActionFilter {
     private final CompatConfig compatConfig;
 
     public OpenDistroSecurityFilter(final PrivilegesEvaluator evalp, final AdminDNs adminDns,
-                                    DlsFlsRequestValve dlsFlsValve, AuditLog auditLog, ThreadPool threadPool, ClusterService cs,
-                                    ComplianceConfig complianceConfig, final CompatConfig compatConfig) {
+            DlsFlsRequestValve dlsFlsValve, AuditLog auditLog, ThreadPool threadPool, ClusterService cs,
+            ComplianceConfig complianceConfig, final CompatConfig compatConfig) {
         this.evalp = evalp;
         this.adminDns = adminDns;
         this.dlsFlsValve = dlsFlsValve;
@@ -250,8 +251,6 @@ public class OpenDistroSecurityFilter implements ActionFilter {
                 log.trace("Evaluate permissions for user: {}", user.getName());
             }
 
-            log.debug("Evaluate permissions for user: {}", user.getName());
-
             final PrivilegesEvaluatorResponse pres = eval.evaluate(user, action, request, task);
             
             if (log.isDebugEnabled()) {
@@ -268,8 +267,7 @@ public class OpenDistroSecurityFilter implements ActionFilter {
             } else {
                 auditLog.logMissingPrivileges(action, request, task);
                 log.debug("no permissions for {}", pres.getMissingPrivileges());
-
-                listener.onFailure(new ElasticsearchSecurityException("no permissions for " + pres.getMissingPrivileges() +" for "+user, RestStatus.FORBIDDEN));
+                listener.onFailure(new ElasticsearchSecurityException("no permissions for " + pres.getMissingPrivileges()+" and "+user, RestStatus.FORBIDDEN));
                 return;
             }
         } catch (Throwable e) {
