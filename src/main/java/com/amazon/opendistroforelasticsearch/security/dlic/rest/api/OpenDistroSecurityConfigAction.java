@@ -47,9 +47,9 @@ public class OpenDistroSecurityConfigAction extends PatchableResourceApiAction {
 
 	@Inject
 	public OpenDistroSecurityConfigAction(final Settings settings, final Path configPath, final RestController controller, final Client client,
-										  final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
-										  final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator, ThreadPool threadPool, AuditLog auditLog) {
-		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, privilegesEvaluator, threadPool, auditLog);
+			final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl, final ClusterService cs,
+			final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator, ThreadPool threadPool, AuditLog auditLog) {
+		super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool, auditLog);
 		allowPutOrPatch = settings.getAsBoolean(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_RESTAPI_ALLOW_SECURITYCONFIG_MODIFICATION, false);
 	}
 

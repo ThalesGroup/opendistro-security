@@ -177,7 +177,7 @@ public class OpenDistroPrivilegesEvaluator extends AbstractPrivilegesEvaluator {
         final Set<String> mappedRoles = mapRoles(user, caller);
         final SecurityRoles securityRoles = getSecurityRoles(mappedRoles);
 
-        final OpenDistroPrivilegesEvaluatorResponse presponse = new OpenDistroPrivilegesEvaluatorResponse();
+        final PrivilegesEvaluatorResponse presponse = new PrivilegesEvaluatorResponse();
 
 
         if (log.isDebugEnabled()) {

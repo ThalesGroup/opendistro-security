@@ -38,6 +38,9 @@ import org.elasticsearch.index.shard.ShardUtils;
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
 import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceIndexingOperationListener;
+import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
+import com.amazon.opendistroforelasticsearch.security.configuration.EmptyFilterLeafReader;
+import com.amazon.opendistroforelasticsearch.security.configuration.OpenDistroSecurityIndexSearcherWrapper;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
 import com.amazon.opendistroforelasticsearch.security.support.OpenDistroSecurityUtils;
@@ -55,8 +58,8 @@ public class OpenDistroSecurityFlsDlsIndexSearcherWrapper extends OpenDistroSecu
 
     public OpenDistroSecurityFlsDlsIndexSearcherWrapper(final IndexService indexService, final Settings settings,
             final AdminDNs adminDNs, final ClusterService clusterService, final AuditLog auditlog,
-            final ComplianceIndexingOperationListener ciol, final ComplianceConfig complianceConfig, final PrivilegesEvaluator privilegesEvaluator) {
-        super(indexService, settings, adminDNs, privilegesEvaluator);
+            final ComplianceIndexingOperationListener ciol, final ComplianceConfig complianceConfig, final PrivilegesEvaluator evaluator) {
+        super(indexService, settings, adminDNs, evaluator);
         ciol.setIs(indexService);
         this.clusterService = clusterService;
         this.indexService = indexService;

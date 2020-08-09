@@ -199,6 +199,7 @@ public class BackendRegistry implements ConfigurationChangeListener {
         this.auditLog = auditLog;
         this.threadPool = threadPool;
         this.userInjector = new UserInjector(settings, threadPool, auditLog, xffResolver);
+        
         authImplMap.put("intern_c", InternalAuthenticationBackend.class.getName());
         authImplMap.put("intern_z", NoOpAuthorizationBackend.class.getName());
 
@@ -378,6 +379,7 @@ public class BackendRegistry implements ConfigurationChangeListener {
         }
 
         originalDestroyableComponents = null;
+
     }
 
     private void createAuthFailureListeners(Map<String, Settings> authFailureListenerSettings, List<AuthFailureListener> ipAuthFailureListeners,
@@ -469,8 +471,6 @@ public class BackendRegistry implements ConfigurationChangeListener {
                 log.debug("User {} submitted also basic credentials: {}", origPKIUser.getName(), creds);
             }
         }
-
-
 
         //loop over all transport auth domains
         for (final AuthDomain authDomain: transportAuthDomains) {

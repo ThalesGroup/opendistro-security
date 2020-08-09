@@ -17,6 +17,7 @@ package com.amazon.opendistroforelasticsearch.security.dlic.rest.api;
 
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
+import com.amazon.opendistroforelasticsearch.security.configuration.ConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
@@ -25,6 +26,8 @@ import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvalu
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;

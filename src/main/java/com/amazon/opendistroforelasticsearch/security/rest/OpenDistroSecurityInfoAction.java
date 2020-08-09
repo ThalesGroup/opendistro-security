@@ -39,10 +39,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.RamUsageEstimator;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -56,6 +56,7 @@ import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.threadpool.ThreadPool;
 
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.support.Base64Helper;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 import com.amazon.opendistroforelasticsearch.security.user.User;
@@ -63,13 +64,13 @@ import com.amazon.opendistroforelasticsearch.security.user.User;
 public class OpenDistroSecurityInfoAction extends BaseRestHandler {
 
     private final Logger log = LogManager.getLogger(this.getClass());
-    private final PrivilegesEvaluator privilegesEvaluator;
+    private final PrivilegesEvaluator evaluator;
     private final ThreadContext threadContext;
 
-    public OpenDistroSecurityInfoAction(final Settings settings, final RestController controller, final PrivilegesEvaluator privilegesEvaluator, final ThreadPool threadPool) {
+    public OpenDistroSecurityInfoAction(final Settings settings, final RestController controller, final PrivilegesEvaluator evaluator, final ThreadPool threadPool) {
         super(settings);
         this.threadContext = threadPool.getThreadContext();
-        this.privilegesEvaluator = privilegesEvaluator;
+        this.evaluator = evaluator;
         controller.registerHandler(GET, "/_opendistro/_security/authinfo", this);
         controller.registerHandler(POST, "/_opendistro/_security/authinfo", this);
     }
@@ -92,7 +93,7 @@ public class OpenDistroSecurityInfoAction extends BaseRestHandler {
                     final User user = (User)threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_USER);
                     final TransportAddress remoteAddress = (TransportAddress) threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_REMOTE_ADDRESS);
 
-                    final Set<String> securityRoles = privilegesEvaluator.mapRoles(user, remoteAddress);
+                    final Set<String> securityRoles = evaluator.mapRoles(user, remoteAddress);
 
                     builder.startObject();
                     builder.field("user", user==null?null:user.toString());
@@ -102,7 +103,7 @@ public class OpenDistroSecurityInfoAction extends BaseRestHandler {
                     builder.field("backend_roles", user==null?null:user.getRoles());
                     builder.field("custom_attribute_names", user==null?null:user.getCustomAttributesMap().keySet());
                     builder.field("roles", securityRoles);
-                    builder.field("tenants", privilegesEvaluator.mapTenants(user, securityRoles));
+                    builder.field("tenants", evaluator.mapTenants(user, securityRoles));
                     builder.field("principal", (String)threadContext.getTransient(ConfigConstants.OPENDISTRO_SECURITY_SSL_PRINCIPAL));
                     builder.field("peer_certificates", certs != null && certs.length > 0 ? certs.length + "" : "0");
                     builder.field("sso_logout_url", (String)threadContext.getTransient(ConfigConstants.SSO_LOGOUT_URL));

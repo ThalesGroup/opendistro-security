@@ -78,8 +78,8 @@ public class OpenDistroSecurityIndexAccessEvaluator {
         securityDeniedActionPatterns = (restoreSecurityIndexEnabled?securityIndexDeniedActionPatternsList:securityIndexDeniedActionPatternsListNoSnapshot).toArray(new String[0]);
     }
     
-    public OpenDistroPrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final Resolved requestedResolved,
-                                                          final OpenDistroPrivilegesEvaluatorResponse presponse)  {
+    public PrivilegesEvaluatorResponse evaluate(final ActionRequest request, final Task task, final String action, final Resolved requestedResolved,
+            final PrivilegesEvaluatorResponse presponse)  {
 
         if (requestedResolved.getAllIndices().contains(opendistrosecurityIndex)
                 && WildcardMatcher.matchAny(securityDeniedActionPatterns, action)) {

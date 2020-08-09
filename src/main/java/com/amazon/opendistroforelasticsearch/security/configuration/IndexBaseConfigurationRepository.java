@@ -33,14 +33,12 @@ package com.amazon.opendistroforelasticsearch.security.configuration;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -101,7 +99,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
     private final ComplianceConfig complianceConfig;
     private ThreadPool threadPool;
 
-    private IndexBaseConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool,
+    private IndexBaseConfigurationRepository(Settings settings, final Path configPath, ThreadPool threadPool, 
             Client client, ClusterService clusterService, AuditLog auditLog, ComplianceConfig complianceConfig) {
         this.opendistrosecurityIndex = settings.get(ConfigConstants.OPENDISTRO_SECURITY_CONFIG_INDEX_NAME, ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CONFIG_INDEX);
         this.settings = settings;
@@ -270,7 +268,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
                     LOGGER.error("Failure while executing IndicesExistsRequest {}",e2, e2);
                     bgThread.start();
                 }
-
+                                
             }
         });
     }
@@ -347,7 +345,7 @@ public class IndexBaseConfigurationRepository implements ConfigurationRepository
         LOGGER.debug("Subscribe on configuration changes by type {} with listener {}", configurationType, listener);
         configTypeToChancheListener.put(configurationType, listener);
     }
-
+    
     private synchronized void notifyAboutChanges(Map<String, Settings> typeToConfig) {
         for (Map.Entry<String, ConfigurationChangeListener> entry : configTypeToChancheListener.entries()) {
             String type = entry.getKey();

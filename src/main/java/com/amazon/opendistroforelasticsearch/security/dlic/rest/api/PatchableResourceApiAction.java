@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.index.IndexResponse;
@@ -45,6 +44,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,9 +58,9 @@ public abstract class PatchableResourceApiAction extends AbstractApiAction {
 
     public PatchableResourceApiAction(Settings settings, Path configPath, RestController controller, Client client,
                                       AdminDNs adminDNs, IndexBaseConfigurationRepository cl, ClusterService cs,
-                                      PrincipalExtractor principalExtractor, PrivilegesEvaluator privilegesEvaluator, ThreadPool threadPool,
+                                      PrincipalExtractor principalExtractor, PrivilegesEvaluator evaluator, ThreadPool threadPool,
                                       AuditLog auditLog) {
-        super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, privilegesEvaluator, threadPool,
+        super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool,
                 auditLog);
     }
 

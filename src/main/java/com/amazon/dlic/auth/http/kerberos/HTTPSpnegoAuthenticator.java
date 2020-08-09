@@ -249,13 +249,6 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                     log.error("Ticket validation not successful due to", e);
                     return null;
                 } catch (final PrivilegedActionException e) {
-                    log.error("Caught exception in extractCredentials0. Please investigate: "
-                            + e
-                            + Arrays.asList(e.getStackTrace())
-                            .stream()
-                            .map(Objects::toString)
-                            .collect(Collectors.joining("\n"))
-                    );
                     final Throwable cause = e.getCause();
                     if (cause instanceof GSSException) {
                         log.info("Service login not successful due to", e);

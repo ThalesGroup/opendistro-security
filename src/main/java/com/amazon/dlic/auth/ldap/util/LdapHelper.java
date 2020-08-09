@@ -16,7 +16,17 @@
 package com.amazon.dlic.auth.ldap.util;
 
 import org.elasticsearch.SpecialPermission;
-import org.ldaptive.*;
+import org.ldaptive.Connection;
+import org.ldaptive.DerefAliases;
+import org.ldaptive.LdapEntry;
+import org.ldaptive.LdapException;
+import org.ldaptive.Response;
+import org.ldaptive.ReturnAttributes;
+import org.ldaptive.SearchFilter;
+import org.ldaptive.SearchOperation;
+import org.ldaptive.SearchRequest;
+import org.ldaptive.SearchResult;
+import org.ldaptive.SearchScope;
 import org.ldaptive.referral.SearchReferralHandler;
 
 import javax.naming.InvalidNameException;

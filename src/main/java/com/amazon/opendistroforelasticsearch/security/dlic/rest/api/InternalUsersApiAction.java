@@ -17,10 +17,13 @@ package com.amazon.opendistroforelasticsearch.security.dlic.rest.api;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
+import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -44,6 +47,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseCon
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.support.Utils;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.AbstractConfigurationValidator;
 import com.amazon.opendistroforelasticsearch.security.dlic.rest.validation.InternalUsersValidator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
 import com.amazon.opendistroforelasticsearch.security.ssl.transport.PrincipalExtractor;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
 
@@ -54,9 +58,9 @@ public class InternalUsersApiAction extends PatchableResourceApiAction {
     @Inject
     public InternalUsersApiAction(final Settings settings, final Path configPath, final RestController controller,
                                   final Client client, final AdminDNs adminDNs, final IndexBaseConfigurationRepository cl,
-                                  final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator privilegesEvaluator,
+                                  final ClusterService cs, final PrincipalExtractor principalExtractor, final PrivilegesEvaluator evaluator,
                                   ThreadPool threadPool, AuditLog auditLog) {
-        super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, privilegesEvaluator, threadPool,
+        super(settings, configPath, controller, client, adminDNs, cl, cs, principalExtractor, evaluator, threadPool,
                 auditLog);
     }
 

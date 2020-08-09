@@ -91,8 +91,12 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkModule;
 import org.elasticsearch.common.network.NetworkService;
-import org.elasticsearch.common.settings.*;
+import org.elasticsearch.common.settings.ClusterSettings;
+import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
@@ -119,8 +123,17 @@ import org.elasticsearch.search.internal.ScrollContext;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.transport.*;
+import org.elasticsearch.transport.RemoteClusterService;
+import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.Transport.Connection;
+import org.elasticsearch.transport.TransportChannel;
+import org.elasticsearch.transport.TransportInterceptor;
+import org.elasticsearch.transport.TransportRequest;
+import org.elasticsearch.transport.TransportRequestHandler;
+import org.elasticsearch.transport.TransportRequestOptions;
+import org.elasticsearch.transport.TransportResponse;
+import org.elasticsearch.transport.TransportResponseHandler;
+import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.io.IOException;
@@ -159,7 +172,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
     private boolean sslCertReloadEnabled;
     private volatile OpenDistroSecurityRestFilter securityRestHandler;
     private volatile OpenDistroSecurityInterceptor odsi;
-    private volatile PrivilegesEvaluator privilegesEvaluator;
+    private volatile PrivilegesEvaluator evaluator;
     private volatile ThreadPool threadPool;
     private volatile IndexBaseConfigurationRepository cr;
     private volatile AdminDNs adminDns;
@@ -439,18 +452,18 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
             handlers.addAll(super.getRestHandlers(settings, restController, clusterSettings, indexScopedSettings, settingsFilter, indexNameExpressionResolver, nodesInCluster));
 
             if(!sslOnly) {
-                handlers.add(new OpenDistroSecurityInfoAction(settings, restController, Objects.requireNonNull(privilegesEvaluator), Objects.requireNonNull(threadPool)));
-                handlers.add(new KibanaInfoAction(settings, restController, Objects.requireNonNull(privilegesEvaluator), Objects.requireNonNull(threadPool)));
+                handlers.add(new OpenDistroSecurityInfoAction(settings, restController, Objects.requireNonNull(evaluator), Objects.requireNonNull(threadPool)));
+                handlers.add(new KibanaInfoAction(settings, restController, Objects.requireNonNull(evaluator), Objects.requireNonNull(threadPool)));
                 handlers.add(new OpenDistroSecurityHealthAction(settings, restController, Objects.requireNonNull(backendRegistry)));
                 handlers.add(new OpenDistroSecuritySSLCertsInfoAction(settings, restController, odsks, Objects.requireNonNull(threadPool), Objects.requireNonNull(adminDns)));
-                handlers.add(new TenantInfoAction(settings, restController, Objects.requireNonNull(privilegesEvaluator), Objects.requireNonNull(threadPool),
+                handlers.add(new TenantInfoAction(settings, restController, Objects.requireNonNull(evaluator), Objects.requireNonNull(threadPool),
 				Objects.requireNonNull(cs), Objects.requireNonNull(adminDns)));
 
                 if (sslCertReloadEnabled) {
                     handlers.add(new OpenDistroSecuritySSLReloadCertsAction(settings, restController, odsks, Objects.requireNonNull(threadPool), Objects.requireNonNull(adminDns)));
                 }
                 Collection<RestHandler> apiHandler = ReflectionHelper
-                        .instantiateMngtRestApiHandler(settings, configPath, restController, localClient, adminDns, cr, cs, Objects.requireNonNull(principalExtractor), privilegesEvaluator, threadPool, Objects.requireNonNull(auditLog));
+                        .instantiateMngtRestApiHandler(settings, configPath, restController, localClient, adminDns, cr, cs, Objects.requireNonNull(principalExtractor), evaluator, threadPool, Objects.requireNonNull(auditLog));
                 handlers.addAll(apiHandler);
                 log.debug("Added {} management rest handler(s)", apiHandler.size());
             }
@@ -488,7 +501,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
                             Objects.requireNonNull(auditLog),
                             Objects.requireNonNull(ciol),
                             Objects.requireNonNull(complianceConfig),
-                            Objects.requireNonNull(privilegesEvaluator));
+                            Objects.requireNonNull(evaluator));
             if(log.isDebugEnabled()) {
                 log.debug("FLS/DLS enabled for index {}", indexService.index().getName());
             }
@@ -561,7 +574,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
                 assert complianceConfig==null:"compliance config must be null here";
                 
                 indexModule.setSearcherWrapper(indexService -> new OpenDistroSecurityIndexSearcherWrapper(indexService, settings, Objects
-                        .requireNonNull(adminDns), Objects.requireNonNull(privilegesEvaluator)));
+                        .requireNonNull(adminDns), Objects.requireNonNull(evaluator)));
             }
 
             indexModule.addSearchOperationListener(new SearchOperationListener() {
@@ -775,7 +788,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         log.debug("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR));
 
         try {
-            privilegesEvaluator = (PrivilegesEvaluator) PrivilegesEvaluatorFactory.getPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+            evaluator = (PrivilegesEvaluator) PrivilegesEvaluatorFactory.getPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         } catch (Throwable e) {
             log.error("Caught exception while initializing privileges evaluator . Please investigate: "
                     + e.getCause()
@@ -792,7 +805,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
 
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
 
-        odsf = new OpenDistroSecurityFilter(privilegesEvaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
+        odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
         final String principalExtractorClass = settings.get(SSLConfigConstants.OPENDISTRO_SECURITY_SSL_TRANSPORT_PRINCIPAL_EXTRACTOR_CLASS, null);
 
@@ -829,7 +842,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         components.add(xffResolver);
         components.add(backendRegistry);
         components.add(ah);
-        components.add(privilegesEvaluator);
+        components.add(evaluator);
         components.add(odsi);
 
         securityRestHandler = new OpenDistroSecurityRestFilter(backendRegistry, auditLog, threadPool, principalExtractor, settings, configPath, compatConfig);

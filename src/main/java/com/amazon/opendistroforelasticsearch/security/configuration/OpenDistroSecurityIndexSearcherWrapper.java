@@ -59,17 +59,17 @@ public class OpenDistroSecurityIndexSearcherWrapper extends IndexSearcherWrapper
     protected final Index index;
     protected final String opendistrosecurityIndex;
     private final AdminDNs adminDns;
-    private final PrivilegesEvaluator privilegesEvaluator;
+    private final PrivilegesEvaluator evaluator;
     private final Collection<String> indexPatterns;
     private final Collection<String> allowedRoles;
     private final Boolean protectedIndexEnabled;
 
     //constructor is called per index, so avoid costly operations here
-    public OpenDistroSecurityIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs, final PrivilegesEvaluator privilegesEvaluator) {
+    public OpenDistroSecurityIndexSearcherWrapper(final IndexService indexService, final Settings settings, final AdminDNs adminDNs, final PrivilegesEvaluator evaluator) {
         index = indexService.index();
         threadContext = indexService.getThreadPool().getThreadContext();
         this.opendistrosecurityIndex = settings.get(ConfigConstants.OPENDISTRO_SECURITY_CONFIG_INDEX_NAME, ConfigConstants.OPENDISTRO_SECURITY_DEFAULT_CONFIG_INDEX);
-        this.privilegesEvaluator = privilegesEvaluator;
+        this.evaluator = evaluator;
         this.adminDns = adminDNs;
         this.indexPatterns = settings.getAsList(ConfigConstants.OPENDISTRO_SECURITY_PROTECTED_INDICES_KEY);
         this.allowedRoles = settings.getAsList(ConfigConstants.OPENDISTRO_SECURITY_PROTECTED_INDICES_ROLES_KEY);
@@ -131,7 +131,7 @@ public class OpenDistroSecurityIndexSearcherWrapper extends IndexSearcherWrapper
         if (caller == null || user == null) {
             return false;
         }
-        final Set<String> securityRoles = privilegesEvaluator.mapRoles(user, caller);
+        final Set<String> securityRoles = evaluator.mapRoles(user, caller);
         if (WildcardMatcher.matchAny(allowedRoles, securityRoles)) {
             return true;
         }
