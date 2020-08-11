@@ -138,6 +138,7 @@ import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -790,7 +791,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         try {
             evaluator = (PrivilegesEvaluator) PrivilegesEvaluatorFactory.getPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         } catch (Throwable e) {
-            log.error("Caught exception while initializing privileges evaluator . Please investigate: "
+            throw new ElasticsearchSecurityException("Caught exception while initializing privileges evaluator . Please investigate: "
                     + e.getCause()
                     + Arrays.asList(e.getStackTrace())
                     .stream()

@@ -15,9 +15,17 @@ import java.util.Set;
 
 public interface PrivilegesEvaluator extends ConfigurationChangeListener {
 
+    /**
+     * evaluate() and isInitialized() are needed for any implementation of PrivilegesEvaluator interface
+     */
+
     PrivilegesEvaluatorResponse evaluate(final User user, String action0, final ActionRequest request, Task task);
 
     boolean isInitialized();
+
+    /**
+     * The below methods are called from outside PrivilegesEvaluator implementation, therefore kept in this interface
+     */
 
     Set<String> mapRoles(User user, TransportAddress remoteAddress);
 

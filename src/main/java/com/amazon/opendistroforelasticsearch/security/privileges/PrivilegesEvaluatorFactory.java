@@ -27,8 +27,7 @@ public class PrivilegesEvaluatorFactory {
                                                 IndexNameExpressionResolver resolver, AuditLog auditLog,
                                                 Settings settings, PrivilegesInterceptor privilegesInterceptor,
                                                 ClusterInfoHolder cih, IndexResolverReplacer irr,
-                                                boolean advancedModulesEnabled) throws ClassNotFoundException,
-            NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+                                                boolean advancedModulesEnabled) throws Exception {
 
         Class<?> clazz = Class.forName(settings.get(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR));
         Constructor<?> ctor = clazz.getConstructor(ClusterService.class, ThreadPool.class, ConfigurationRepository.class,
