@@ -791,7 +791,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         try {
             evaluator = (PrivilegesEvaluator) PrivilegesEvaluatorFactory.getPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
         } catch (Throwable e) {
-            throw new ElasticsearchSecurityException("Caught exception while initializing privileges evaluator . Please investigate: "
+            throw new ElasticsearchException("Caught exception while initializing privileges evaluator . Please investigate: "
                     + e.getCause()
                     + Arrays.asList(e.getStackTrace())
                     .stream()

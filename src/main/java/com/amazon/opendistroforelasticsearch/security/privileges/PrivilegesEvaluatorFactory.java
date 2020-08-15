@@ -1,6 +1,5 @@
 package com.amazon.opendistroforelasticsearch.security.privileges;
 
-
 import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
 import com.amazon.opendistroforelasticsearch.security.configuration.ActionGroupHolder;
 import com.amazon.opendistroforelasticsearch.security.configuration.ClusterInfoHolder;
@@ -8,6 +7,7 @@ import com.amazon.opendistroforelasticsearch.security.configuration.Configuratio
 import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
 import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
 import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
@@ -27,7 +27,8 @@ public class PrivilegesEvaluatorFactory {
                                                 IndexNameExpressionResolver resolver, AuditLog auditLog,
                                                 Settings settings, PrivilegesInterceptor privilegesInterceptor,
                                                 ClusterInfoHolder cih, IndexResolverReplacer irr,
-                                                boolean advancedModulesEnabled) throws Exception {
+                                                boolean advancedModulesEnabled) throws ElasticsearchException,
+            ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
         Class<?> clazz = Class.forName(settings.get(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR));
         Constructor<?> ctor = clazz.getConstructor(ClusterService.class, ThreadPool.class, ConfigurationRepository.class,

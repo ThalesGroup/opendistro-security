@@ -170,7 +170,7 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                 try {
                     KrbAuthToNameWrapper.init(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH), true);
                 } catch (IOException e) {
-                    log.error("Error while initializing auth_to_local due to {}", e.getStackTrace());
+                    log.warn("Error while initializing auth_to_local due to {}", e.getStackTrace());
                 }
             }
 
@@ -280,7 +280,7 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                         username = principalName;
                     }
                 } catch (IOException e) {
-                    log.error("Exception while getting name from auth_to_local due to {}, will use principal as username : ", e.getStackTrace());
+                    log.warn("Exception while getting name from auth_to_local due to {}, will use principal as username : ", e.getStackTrace());
                     username = ((SimpleUserPrincipal) principal).getName();
                 }
 
