@@ -15,6 +15,7 @@
 
 package com.amazon.dlic.auth.http.kerberos;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,15 +25,20 @@ import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 
+import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
+import org.apache.hadoop.security.authentication.util.auth_to_name.KrbAuthToNameWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.ExceptionsHelper;
@@ -62,6 +68,7 @@ import com.google.common.base.Strings;
 
 public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
 
+    protected static Logger logger = LogManager.getLogger(HTTPSpnegoAuthenticator.class);
     private static final String EMPTY_STRING = "";
     private static final Oid[] KRB_OIDS = new Oid[] {KrbConstants.SPNEGO, KrbConstants.KRB5MECH};
 
@@ -157,6 +164,16 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             log.debug("acceptor_principal {}", acceptorPrincipal);
             log.debug("acceptor_keytab_filepath {}", acceptorKeyTabPath);
 
+            if (Strings.isNullOrEmpty(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH))) {
+                log.warn("auth_to_local_file_path is empty, principal names will not be shortened");
+            } else {
+                try {
+                    KrbAuthToNameWrapper.init(settings.get(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH), true);
+                } catch (IOException e) {
+                    log.warn("Error while initializing auth_to_local due to {}", e.getStackTrace());
+                }
+            }
+
         } catch (Throwable e) {
             log.error("Cannot construct HTTPSpnegoAuthenticator due to {}", e.getMessage(), e);
             log.error("Please make sure you configured 'opendistro_security.kerberos.acceptor_keytab_filepath' realtive to the ES config/ dir!");
@@ -204,7 +221,6 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                 byte[] outToken = null;
 
                 try {
-
                     final Subject subject = JaasKrbUtil.loginUsingKeytab(acceptorPrincipal, acceptorKeyTabPath, false);
 
                     final GSSManager manager = GSSManager.getInstance();
@@ -217,7 +233,6 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                         }
                     };
                     gssContext = manager.createContext(Subject.doAs(subject, action));
-
                     outToken = Subject.doAs(subject, new AcceptAction(gssContext, decodedNegotiateHeader));
 
                     if (outToken == null) {
@@ -255,8 +270,19 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
                     return new AuthCredentials("_incomplete_", (Object) outToken);
                 }
 
-
-                final String username = ((SimpleUserPrincipal) principal).getName();
+                String username = "";
+                try {
+                    String principalName = ((SimpleUserPrincipal) principal).getName();
+                    username = KrbAuthToNameWrapper.getName(principalName);
+                    log.debug ("username : " + username + " will be used for " + principalName);
+                    if (!Strings.isNullOrEmpty(principalName) && Strings.isNullOrEmpty(username)) {
+                        log.error("Wrong configuration in auth_to_local for the principal : {} . Please check. Using principal as username", principalName);
+                        username = principalName;
+                    }
+                } catch (IOException e) {
+                    log.warn("Exception while getting name from auth_to_local due to {}, will use principal as username : ", e.getStackTrace());
+                    username = ((SimpleUserPrincipal) principal).getName();
+                }
 
                 if(username == null || username.length() == 0) {
                     log.error("Got empty or null user from kerberos. Normally this means that you acceptor principal {} does not match the server hostname", acceptorPrincipal);
@@ -447,5 +473,4 @@ public class HTTPSpnegoAuthenticator implements HTTPAuthenticator {
             return buffer.toString();
         }
     }
-
 }

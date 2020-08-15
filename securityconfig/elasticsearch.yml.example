@@ -220,3 +220,11 @@ opendistro_security.audit.type: internal_elasticsearch
 # Specify a list of indices to mark as protected. These indices will only be visible / mutable by members of the above setting, in addition to needing permission to the index via a normal role.
 # opendistro_security.protected_indices.indices: ['.opendistro-alerting-config', '.opendistro-ism-*']
 
+
+opendistro_security.privilegesEvaluator: 'com.amazon.opendistroforelasticsearch.security.privileges.RangerPrivilegesEvaluator'
+opendistro_security.ranger.app_id: 'rafd002_elasticsearch'
+opendistro_security.kerberos.acceptor_principal: 'HTTP/rafd002-slv-01.cloud.in.guavus.com@GVS.GGN
+opendistro_security.kerberos.acceptor_keytab_filepath: 'spnego.service.keytab'
+opendistro_security.kerberos.krb5_filepath: 'krb5.conf'
+
+
