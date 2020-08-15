@@ -30,34 +30,45 @@
 
 package com.amazon.opendistroforelasticsearch.security;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.security.AccessController;
-import java.security.MessageDigest;
-import java.security.PrivilegedAction;
-import java.security.Security;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLReloadCertsAction;
+import com.amazon.opendistroforelasticsearch.security.action.configupdate.ConfigUpdateAction;
+import com.amazon.opendistroforelasticsearch.security.action.configupdate.TransportConfigUpdateAction;
+import com.amazon.opendistroforelasticsearch.security.action.whoami.TransportWhoAmIAction;
+import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
+import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLogSslExceptionHandler;
+import com.amazon.opendistroforelasticsearch.security.auditlog.NullAuditLog;
+import com.amazon.opendistroforelasticsearch.security.auth.BackendRegistry;
+import com.amazon.opendistroforelasticsearch.security.auth.internal.InternalAuthenticationBackend;
+import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
+import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceIndexingOperationListener;
+import com.amazon.opendistroforelasticsearch.security.configuration.*;
+import com.amazon.opendistroforelasticsearch.security.filter.OpenDistroSecurityFilter;
+import com.amazon.opendistroforelasticsearch.security.filter.OpenDistroSecurityRestFilter;
+import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityHttpServerTransport;
+import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityNonSslHttpServerTransport;
+import com.amazon.opendistroforelasticsearch.security.http.XFFResolver;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluatorFactory;
+import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesInterceptor;
+import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
+import com.amazon.opendistroforelasticsearch.security.rest.KibanaInfoAction;
+import com.amazon.opendistroforelasticsearch.security.rest.OpenDistroSecurityHealthAction;
+import com.amazon.opendistroforelasticsearch.security.rest.OpenDistroSecurityInfoAction;
+import com.amazon.opendistroforelasticsearch.security.rest.TenantInfoAction;
+import com.amazon.opendistroforelasticsearch.security.ssl.OpenDistroSecuritySSLPlugin;
+import com.amazon.opendistroforelasticsearch.security.ssl.SslExceptionHandler;
+import com.amazon.opendistroforelasticsearch.security.ssl.http.netty.ValidatingDispatcher;
 import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLCertsInfoAction;
+import com.amazon.opendistroforelasticsearch.security.ssl.rest.OpenDistroSecuritySSLReloadCertsAction;
+import com.amazon.opendistroforelasticsearch.security.ssl.transport.OpenDistroSecuritySSLNettyTransport;
+import com.amazon.opendistroforelasticsearch.security.ssl.util.SSLConfigConstants;
+import com.amazon.opendistroforelasticsearch.security.support.*;
+import com.amazon.opendistroforelasticsearch.security.transport.DefaultInterClusterRequestEvaluator;
+import com.amazon.opendistroforelasticsearch.security.transport.InterClusterRequestEvaluator;
+import com.amazon.opendistroforelasticsearch.security.transport.OpenDistroSecurityInterceptor;
+import com.amazon.opendistroforelasticsearch.security.user.User;
+import com.google.common.collect.Lists;
 import org.apache.lucene.search.QueryCachingPolicy;
 import org.apache.lucene.search.Weight;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -125,54 +136,33 @@ import org.elasticsearch.transport.TransportResponseHandler;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
-import com.amazon.opendistroforelasticsearch.security.action.configupdate.ConfigUpdateAction;
-import com.amazon.opendistroforelasticsearch.security.action.configupdate.TransportConfigUpdateAction;
-import com.amazon.opendistroforelasticsearch.security.action.whoami.TransportWhoAmIAction;
-import com.amazon.opendistroforelasticsearch.security.action.whoami.WhoAmIAction;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLogSslExceptionHandler;
-import com.amazon.opendistroforelasticsearch.security.auditlog.NullAuditLog;
-import com.amazon.opendistroforelasticsearch.security.auditlog.AuditLog.Origin;
-import com.amazon.opendistroforelasticsearch.security.auth.BackendRegistry;
-import com.amazon.opendistroforelasticsearch.security.auth.internal.InternalAuthenticationBackend;
-import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceConfig;
-import com.amazon.opendistroforelasticsearch.security.compliance.ComplianceIndexingOperationListener;
-import com.amazon.opendistroforelasticsearch.security.configuration.ActionGroupHolder;
-import com.amazon.opendistroforelasticsearch.security.configuration.AdminDNs;
-import com.amazon.opendistroforelasticsearch.security.configuration.ClusterInfoHolder;
-import com.amazon.opendistroforelasticsearch.security.configuration.CompatConfig;
-import com.amazon.opendistroforelasticsearch.security.configuration.ConfigurationChangeListener;
-import com.amazon.opendistroforelasticsearch.security.configuration.DlsFlsRequestValve;
-import com.amazon.opendistroforelasticsearch.security.configuration.IndexBaseConfigurationRepository;
-import com.amazon.opendistroforelasticsearch.security.configuration.OpenDistroSecurityIndexSearcherWrapper;
-import com.amazon.opendistroforelasticsearch.security.filter.OpenDistroSecurityFilter;
-import com.amazon.opendistroforelasticsearch.security.filter.OpenDistroSecurityRestFilter;
-import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityHttpServerTransport;
-import com.amazon.opendistroforelasticsearch.security.http.OpenDistroSecurityNonSslHttpServerTransport;
-import com.amazon.opendistroforelasticsearch.security.http.XFFResolver;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesEvaluator;
-import com.amazon.opendistroforelasticsearch.security.privileges.PrivilegesInterceptor;
-import com.amazon.opendistroforelasticsearch.security.resolver.IndexResolverReplacer;
-import com.amazon.opendistroforelasticsearch.security.rest.KibanaInfoAction;
-import com.amazon.opendistroforelasticsearch.security.rest.OpenDistroSecurityHealthAction;
-import com.amazon.opendistroforelasticsearch.security.rest.OpenDistroSecurityInfoAction;
-import com.amazon.opendistroforelasticsearch.security.rest.TenantInfoAction;
-import com.amazon.opendistroforelasticsearch.security.ssl.OpenDistroSecuritySSLPlugin;
-import com.amazon.opendistroforelasticsearch.security.ssl.SslExceptionHandler;
-import com.amazon.opendistroforelasticsearch.security.ssl.http.netty.ValidatingDispatcher;
-import com.amazon.opendistroforelasticsearch.security.ssl.transport.OpenDistroSecuritySSLNettyTransport;
-import com.amazon.opendistroforelasticsearch.security.ssl.util.SSLConfigConstants;
-import com.amazon.opendistroforelasticsearch.security.support.ConfigConstants;
-import com.amazon.opendistroforelasticsearch.security.support.HeaderHelper;
-import com.amazon.opendistroforelasticsearch.security.support.ModuleInfo;
-import com.amazon.opendistroforelasticsearch.security.support.OpenDistroSecurityUtils;
-import com.amazon.opendistroforelasticsearch.security.support.ReflectionHelper;
-import com.amazon.opendistroforelasticsearch.security.support.WildcardMatcher;
-import com.amazon.opendistroforelasticsearch.security.transport.DefaultInterClusterRequestEvaluator;
-import com.amazon.opendistroforelasticsearch.security.transport.InterClusterRequestEvaluator;
-import com.amazon.opendistroforelasticsearch.security.transport.OpenDistroSecurityInterceptor;
-import com.amazon.opendistroforelasticsearch.security.user.User;
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.security.AccessController;
+import java.security.MessageDigest;
+import java.security.PrivilegedAction;
+import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin implements ClusterPlugin, MapperPlugin {
 
@@ -474,7 +464,7 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
                     handlers.add(new OpenDistroSecuritySSLReloadCertsAction(settings, restController, odsks, Objects.requireNonNull(threadPool), Objects.requireNonNull(adminDns)));
                 }
                 Collection<RestHandler> apiHandler = ReflectionHelper
-                        .instantiateMngtRestApiHandler(settings, configPath, restController, localClient, adminDns, cr, cs, Objects.requireNonNull(principalExtractor),  evaluator, threadPool, Objects.requireNonNull(auditLog));
+                        .instantiateMngtRestApiHandler(settings, configPath, restController, localClient, adminDns, cr, cs, Objects.requireNonNull(principalExtractor), evaluator, threadPool, Objects.requireNonNull(auditLog));
                 handlers.addAll(apiHandler);
                 log.debug("Added {} management rest handler(s)", apiHandler.size());
             }
@@ -795,13 +785,28 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         backendRegistry = new BackendRegistry(settings, configPath, adminDns, xffResolver, iab, auditLog, threadPool);
         cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, backendRegistry);
         final ActionGroupHolder ah = new ActionGroupHolder(cr);
-        evaluator = new PrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
-        
-        final CompatConfig compatConfig = new CompatConfig(environment);
-        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
-        
-        odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
+        log.debug("Evaluator = " + settings.get(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR));
+
+        try {
+            evaluator = (PrivilegesEvaluator) PrivilegesEvaluatorFactory.getPrivilegesEvaluator(clusterService, threadPool, cr, ah, resolver, auditLog, settings, privilegesInterceptor, cih, irr, advancedModulesEnabled);
+        } catch (Throwable e) {
+            throw new ElasticsearchException("Caught exception while initializing privileges evaluator . Please investigate: "
+                    + e.getCause()
+                    + Arrays.asList(e.getStackTrace())
+                    .stream()
+                    .map(Objects::toString)
+                    .collect(Collectors.joining("\n"))
+            );
+        }
+
+        log.debug("evaluator initialized");
+
+        final CompatConfig compatConfig = new CompatConfig(environment);
+
+        cr.subscribeOnChange(ConfigConstants.CONFIGNAME_CONFIG, compatConfig);
+
+        odsf = new OpenDistroSecurityFilter(evaluator, adminDns, dlsFlsValve, auditLog, threadPool, cs, complianceConfig, compatConfig);
 
         final String principalExtractorClass = settings.get(SSLConfigConstants.OPENDISTRO_SECURITY_SSL_TRANSPORT_PRINCIPAL_EXTRACTOR_CLASS, null);
 
@@ -842,7 +847,6 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
         components.add(odsi);
 
         securityRestHandler = new OpenDistroSecurityRestFilter(backendRegistry, auditLog, threadPool, principalExtractor, settings, configPath, compatConfig);
-
         return components;
 
     }
@@ -1011,6 +1015,19 @@ public final class OpenDistroSecurityPlugin extends OpenDistroSecuritySSLPlugin 
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_ALLOW_NOW_IN_DLS, false, Property.NodeScope, Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_UNSUPPORTED_RESTAPI_ALLOW_SECURITYCONFIG_MODIFICATION, false, Property.NodeScope, Property.Filtered));
             settings.add(Setting.boolSetting(ConfigConstants.OPENDISTRO_SECURITY_SSL_CERT_RELOAD_ENABLED, false, Property.NodeScope, Property.Filtered));
+
+            // Privilege Evaluator Setting
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_PRIVILEGES_EVALUATOR, "com.amazon.opendistroforelasticsearch.security.privileges.OpenDistroPrivilegesEvaluator", Property.NodeScope, Property.Filtered));
+
+            // RangerPrivilegesEvaluator Settings
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_AUTH_RANGER_APP_ID, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_AUTH_RANGER_SERVICE_TYPE, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_HADOOP_HOME_DIR, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_HADOOP_CORE_SITE_XML, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_HADOOP_HDFS_SITE_XML, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_FILEPATH, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_UGI_KEYTAB_PRINCIPAL, "", Property.NodeScope, Property.Filtered));
+            settings.add(Setting.simpleString(ConfigConstants.OPENDISTRO_SECURITY_KERBEROS_AUTH_TO_LOCAL_FILE_PATH,"", Property.NodeScope, Property.Filtered));
         }
         
         return settings;
